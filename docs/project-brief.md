@@ -40,7 +40,7 @@ These are the reading topics and attributions from the initial proposal; bibliog
 
 ## Team
 
-Puya[1], Kandy[3], Jeff[3], Yiwen[1], Karim[1]
+Randell, Yiwen, Karim
 
 Bracketed annotations are retained from the supplied proposal; their meanings are not yet documented.
 
