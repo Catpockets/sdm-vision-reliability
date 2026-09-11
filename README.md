@@ -128,7 +128,3 @@ Puya, Kandy, Jeff, Yiwen, and Karim. Original team annotations and presentation 
 ## Acknowledgments
 
 This project builds on research into the **Similarity-Distance-Magnitude (SDM)** framework and broader work in uncertainty estimation, selective prediction, model calibration, and out-of-distribution detection.
-
-
-
-
