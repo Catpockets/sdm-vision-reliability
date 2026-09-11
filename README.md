@@ -10,6 +10,13 @@ This project investigates whether the **Similarity-Distance-Magnitude (SDM)** fr
 
 The goal is to build models that can selectively abstain from uncertain predictions while maintaining high accuracy on the predictions they do accept.
 
+## Project Documents
+
+- [Initial project idea and requirements](docs/project-brief.md)
+- [Allen Schmaltz’s research overview and attached poster](docs/allen-schmaltz-sdm.md)
+- [Upstream SDM research code](https://github.com/ReexpressAI/sdm_activations)
+- [Project issues and starter tasks](https://github.com/Catpockets/sdm-vision-reliability/issues)
+
 ## Research Question
 
 Can SDM-based uncertainty estimation improve the reliability of multi-class vision models under distribution shift and out-of-distribution conditions?
@@ -60,7 +67,7 @@ Key metrics may include:
 * Abstention rate
 * False-confidence / catastrophic-error rate
 
-A primary objective is to determine whether a model can maintain a target reliability level, such as **95% accuracy on admitted predictions**, while rejecting uncertain inputs.
+A primary objective is to determine whether a model can maintain a target reliability level, such as **95% accuracy on admitted predictions**, while rejecting uncertain inputs. This is a research target, not an established guarantee for arbitrary distribution shifts. Experiments must report coverage alongside accuracy, uncertainty in the estimates, and the assumptions behind any claimed guarantee.
 
 ## Tech Stack
 
@@ -83,45 +90,28 @@ Additional libraries may be introduced as the project evolves.
 
 ## Repository Structure
 
+The repository currently contains project documentation:
+
 ```text
 sdm-vision-reliability/
-│
-├── data/               # Dataset utilities and local data references
-├── notebooks/          # Exploration and experimental notebooks
-├── src/                # Core project source code
-│   ├── models/
-│   ├── sdm/
-│   ├── evaluation/
-│   └── utils/
-│
-├── experiments/        # Experiment configurations and results
-├── tests/              # Automated tests
-├── requirements.txt
 ├── README.md
-└── .gitignore
+└── docs/
+    ├── project-brief.md
+    ├── allen-schmaltz-sdm.md
+    └── assets/
+        └── poster.png
 ```
+
+Dataset utilities, notebooks, model code, experiment configurations, tests, and dependencies will be added as implementation tasks are completed.
 
 ## Getting Started
 
-Clone the repository:
-
 ```bash
-git clone <repository-url>
+git clone https://github.com/Catpockets/sdm-vision-reliability.git
 cd sdm-vision-reliability
 ```
 
-Create a Python virtual environment:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-```
-
-Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
+Read the [project brief](docs/project-brief.md) and [research reference](docs/allen-schmaltz-sdm.md), then choose a [starter issue](https://github.com/Catpockets/sdm-vision-reliability/issues). There is no runnable training pipeline or dependency manifest yet; environment setup is a starter task.
 
 ## Status
 
@@ -132,6 +122,8 @@ The methodology, experiments, and repository structure will evolve throughout de
 ## Team
 
 UC Berkeley Master of Information and Data Science (MIDS) Capstone Project
+
+Puya, Kandy, Jeff, Yiwen, and Karim. Original team annotations and presentation placeholders are in the [project brief](docs/project-brief.md).
 
 ## Acknowledgments
 
