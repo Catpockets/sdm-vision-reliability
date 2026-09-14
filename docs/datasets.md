@@ -16,8 +16,10 @@ or `PYTHONPATH` adjustment is needed.
 | SVHN | [Official cropped digits](http://ufldl.stanford.edu/housenumbers/); torchvision downloads and checks the test file with `download=True`. SciPy reads the `.mat` format. | `test_32x32.mat` |
 
 Downloads are opt-in. With `download=False` (the default), missing data raises an
-error instead of using the network. Never commit datasets. Issue #4 ignores the
-default root `data/`; use an external directory if testing before that PR merges.
+error instead of using the network. Never commit datasets. Before using the
+default root `data/`, add `/data/` to the local exclude file reported by
+`git rev-parse --git-path info/exclude`, or use an external directory. These
+exclusions are local to your clone; no committed `.gitignore` is provided.
 
 CIFAR-100-C is roughly 2.9 GB to download and needs additional space to extract.
 On Linux, for example:
