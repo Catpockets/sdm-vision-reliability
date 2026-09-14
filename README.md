@@ -123,7 +123,7 @@ The methodology, experiments, and repository structure will evolve throughout de
 
 UC Berkeley Master of Information and Data Science (MIDS) Capstone Project
 
-Puya, Kandy, Jeff, Yiwen, and Karim. Original team annotations and presentation placeholders are in the [project brief](docs/project-brief.md).
+Randell, Yiwen, and Karim. Original team annotations and presentation placeholders are in the [project brief](docs/project-brief.md).
 
 ## Acknowledgments
 
