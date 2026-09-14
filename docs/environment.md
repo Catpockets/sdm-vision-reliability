@@ -97,8 +97,32 @@ the [PyTorch reproducibility guidance](https://docs.pytorch.org/docs/2.10/notes/
 for backend requirements; unsupported operations may raise errors or run slower.
 Seeds do not guarantee identical results across releases, devices, or platforms.
 
-Store downloaded data in `data/` or `datasets/`, weights in `checkpoints/`, and
-generated results in `outputs/` or `runs/`. These and local environments/secrets
-are ignored. Keep source notebooks, configuration, small reviewed test fixtures,
-and dependency manifests in Git. Review staged files before committing; ignore
-rules do not remove already tracked files.
+## Local ignore rules
+
+Keep ignore rules local; do not commit a `.gitignore` for this setup. Find this
+clone's exclude file with `git rev-parse --git-path info/exclude` and add:
+
+```gitignore
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.env
+.env.*
+!.env.example
+/data/
+/datasets/
+/checkpoints/
+/outputs/
+/runs/
+/logs/
+/wandb/
+/mlruns/
+```
+
+Configure these exclusions before creating the environment or downloading data.
+They apply only to this clone and are not committed. Alternatively, store data
+and generated outputs outside the repository. Keep source notebooks,
+configuration, small reviewed test fixtures, and dependency manifests in Git.
+Review staged files before committing; ignore rules do not remove tracked files.
