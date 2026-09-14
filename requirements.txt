@@ -1,0 +1,6 @@
+# Direct research dependencies. Select the torch wheel backend before installing.
+torch==2.10.0
+torchvision==0.25.0
+numpy==2.3.5
+scipy==1.17.1
+pillow==12.1.1

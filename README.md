@@ -90,19 +90,24 @@ Additional libraries may be introduced as the project evolves.
 
 ## Repository Structure
 
-The repository currently contains project documentation:
+The repository contains project documentation and a minimal Python environment:
 
 ```text
 sdm-vision-reliability/
 ├── README.md
+├── requirements.txt
+├── .python-version
+├── scripts/
+│   └── check_environment.py
 └── docs/
+    ├── environment.md
     ├── project-brief.md
     ├── allen-schmaltz-sdm.md
     └── assets/
         └── poster.png
 ```
 
-Dataset utilities, notebooks, model code, experiment configurations, tests, and dependencies will be added as implementation tasks are completed.
+Implementation guides and utilities will be added as the starter issues are completed.
 
 ## Getting Started
 
@@ -111,7 +116,7 @@ git clone https://github.com/Catpockets/sdm-vision-reliability.git
 cd sdm-vision-reliability
 ```
 
-Read the [project brief](docs/project-brief.md) and [research reference](docs/allen-schmaltz-sdm.md), then choose a [starter issue](https://github.com/Catpockets/sdm-vision-reliability/issues). There is no runnable training pipeline or dependency manifest yet; environment setup is a starter task.
+Follow the [environment setup](docs/environment.md) to install the pinned Python dependencies and run the import/device smoke check. Read the [project brief](docs/project-brief.md) and [research reference](docs/allen-schmaltz-sdm.md), then choose a [starter issue](https://github.com/Catpockets/sdm-vision-reliability/issues). There is no training pipeline yet.
 
 ## Status
 

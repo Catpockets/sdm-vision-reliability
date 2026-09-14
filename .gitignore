@@ -1,0 +1,32 @@
+# Python environments and generated files
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+/build/
+/dist/
+
+# Local credentials; examples must contain placeholders only
+.env
+.env.*
+!.env.example
+
+# Downloaded data and experiment outputs
+/data/
+/datasets/
+/checkpoints/
+/outputs/
+/runs/
+/logs/
+/wandb/
+/mlruns/
+
+# Editor and operating-system files
+.DS_Store
+Thumbs.db
+*.swp
+*~
