@@ -12,6 +12,7 @@ The goal is to build models that can selectively abstain from uncertain predicti
 
 ## Project Documents
 
+- [Start here: CIFAR-100 EDA notebook](notebooks/01_cifar100_eda.ipynb)
 - [Initial project idea and requirements](docs/project-brief.md)
 - [Allen Schmaltz’s research overview and attached poster](docs/allen-schmaltz-sdm.md)
 - [Upstream SDM research code](https://github.com/ReexpressAI/sdm_activations)
@@ -90,11 +91,14 @@ Additional libraries may be introduced as the project evolves.
 
 ## Repository Structure
 
-The repository currently contains project documentation:
+Start with the notebook to get familiar with the data:
 
 ```text
 sdm-vision-reliability/
 ├── README.md
+├── requirements.txt
+├── notebooks/
+│   └── 01_cifar100_eda.ipynb
 └── docs/
     ├── project-brief.md
     ├── allen-schmaltz-sdm.md
@@ -102,7 +106,8 @@ sdm-vision-reliability/
         └── poster.png
 ```
 
-Dataset utilities, notebooks, model code, experiment configurations, tests, and dependencies will be added as implementation tasks are completed.
+The notebook explores CIFAR-100 training images, class names, class balance, and
+pixel values. It includes questions for the team to discuss before modeling.
 
 ## Getting Started
 
@@ -111,7 +116,41 @@ git clone https://github.com/Catpockets/sdm-vision-reliability.git
 cd sdm-vision-reliability
 ```
 
-Read the [project brief](docs/project-brief.md) and [research reference](docs/allen-schmaltz-sdm.md), then choose a [starter issue](https://github.com/Catpockets/sdm-vision-reliability/issues). There is no runnable training pipeline or dependency manifest yet; environment setup is a starter task.
+### Open the first-look notebook
+
+Use Python 3.12. From the repository folder, create an environment outside the
+repository, install the four dependencies, and start JupyterLab:
+
+```bash
+python3.12 -m venv ~/.venvs/sdm-eda
+source ~/.venvs/sdm-eda/bin/activate
+python -m pip install -r requirements.txt
+python -m jupyterlab notebooks/01_cifar100_eda.ipynb
+```
+
+On Windows PowerShell, use these first two commands instead:
+
+```powershell
+py -3.12 -m venv "$HOME\.venvs\sdm-eda"
+& "$HOME\.venvs\sdm-eda\Scripts\Activate.ps1"
+```
+
+In JupyterLab, choose **Kernel → Restart Kernel and Run All Cells**. The first run
+downloads about 169 MB of CIFAR-100 data; later runs reuse the file in
+`~/.cache/sdm-vision-reliability/`. You can change `DATA_DIR` in the notebook.
+The download can take a few minutes. No GPU setup is required.
+
+You will see image and class galleries, dataset dimensions, label counts, and
+color histograms. Try changing `CLASS_NAME` and write your observations in the
+last cell. This first notebook uses only training data; the test set and
+corruption/OOD experiments are reserved for later work.
+
+Keep downloaded data and local environments outside Git. No `.gitignore` is
+included. The notebook is saved with cleared outputs; use **Run All** to populate
+the tables and plots. Clear outputs before committing notebook edits.
+
+For project context, read the [project brief](docs/project-brief.md) and
+[research reference](docs/allen-schmaltz-sdm.md).
 
 ## Status
 
