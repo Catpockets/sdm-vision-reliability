@@ -2,3 +2,6 @@ jupyterlab>=4,<5
 numpy>=2.3,<2.4
 pandas>=2.2,<3
 matplotlib>=3.9,<4
+# Prefer the CPU-only wheel on machines without CUDA.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.3,<3

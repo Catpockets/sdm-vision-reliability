@@ -119,7 +119,7 @@ cd sdm-vision-reliability
 ### Open the first-look notebook
 
 Use Python 3.12. From the repository folder, create an environment outside the
-repository, install the four dependencies, and start JupyterLab:
+repository, install the dependencies, and start JupyterLab:
 
 ```bash
 python3.12 -m venv ~/.venvs/sdm-eda
@@ -139,6 +139,8 @@ In JupyterLab, choose **Kernel → Restart Kernel and Run All Cells**. The first
 downloads about 169 MB of CIFAR-100 data; later runs reuse the file in
 `~/.cache/sdm-vision-reliability/`. You can change `DATA_DIR` in the notebook.
 The download can take a few minutes. No GPU setup is required.
+
+The CNN baseline uses the CPU-only PyTorch wheel on machines without CUDA.
 
 You will see image and class galleries, dataset dimensions, label counts, and
 color histograms. Try changing `CLASS_NAME` and write your observations in the
