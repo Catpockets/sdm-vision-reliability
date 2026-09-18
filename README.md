@@ -14,6 +14,7 @@ The goal is to build models that can selectively abstain from uncertain predicti
 
 - [Initial project idea and requirements](docs/project-brief.md)
 - [Allen Schmaltz’s research overview and attached poster](docs/allen-schmaltz-sdm.md)
+- [Pinned upstream SDM checkout](docs/upstream-sdm.md)
 - [Upstream SDM research code](https://github.com/ReexpressAI/sdm_activations)
 - [Project issues and starter tasks](https://github.com/Catpockets/sdm-vision-reliability/issues)
 
