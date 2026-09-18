@@ -1,0 +1,3 @@
+[submodule "third_party/sdm_activations"]
+	path = third_party/sdm_activations
+	url = https://github.com/ReexpressAI/sdm_activations.git
