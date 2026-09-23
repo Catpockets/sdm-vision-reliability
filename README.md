@@ -98,8 +98,10 @@ Start with the notebook to get familiar with the data:
 sdm-vision-reliability/
 ├── README.md
 ├── requirements.txt
+├── requirements-training.txt
 ├── notebooks/
-│   └── 01_cifar100_eda.ipynb
+│   ├── 01_cifar100_eda.ipynb
+│   └── 02_cifar100_training_baseline.ipynb
 └── docs/
     ├── project-brief.md
     ├── allen-schmaltz-sdm.md
@@ -109,6 +111,10 @@ sdm-vision-reliability/
 
 The notebook explores CIFAR-100 training images, class names, class balance, and
 pixel values. It includes questions for the team to discuss before modeling.
+
+The training notebook fine-tunes an ImageNet-pretrained ConvNeXt-Tiny model on
+CIFAR-100. It keeps training, checkpoint validation, calibration, and held-out
+test data separate and exports model representations for later reliability work.
 
 ## Getting Started
 
@@ -149,6 +155,45 @@ corruption/OOD experiments are reserved for later work.
 Keep downloaded data and local environments outside Git. No `.gitignore` is
 included. The notebook is saved with cleared outputs; use **Run All** to populate
 the tables and plots. Clear outputs before committing notebook edits.
+
+### Train the CIFAR-100 baseline
+
+The training notebook is designed for Python 3.12 and automatically uses CUDA,
+Apple MPS, or CPU. A CUDA GPU is strongly recommended for the full benchmark.
+Create a separate environment outside the repository and launch the notebook:
+
+```bash
+python3.12 -m venv ~/.venvs/sdm-training
+source ~/.venvs/sdm-training/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements-training.txt
+python -m jupyterlab notebooks/02_cifar100_training_baseline.ipynb
+```
+
+On Windows PowerShell, activate the environment with:
+
+```powershell
+& "$HOME\.venvs\sdm-training\Scripts\Activate.ps1"
+```
+
+Use **Kernel → Restart Kernel and Run All Cells**. The default `benchmark` mode
+runs 20 epochs and evaluates all 10,000 held-out test images. Runtime depends on
+the GPU. Downloaded data, pretrained weights, checkpoints, metadata, and NumPy
+exports are stored under `~/.cache/sdm-vision-reliability/`, not in the Git
+checkout. Re-running the notebook reuses its best checkpoint; set
+`SDM_FORCE_RETRAIN=1` before launching Jupyter to train again from scratch.
+
+Before committing changes, validate the pipeline without a full training run:
+
+```bash
+SDM_RUN_MODE=smoke python -m jupyterlab notebooks/02_cifar100_training_baseline.ipynb
+```
+
+Smoke mode trains and evaluates only two batches. Its metrics are deliberately
+incomplete and must not be reported as benchmark results. The initial clean
+top-1 target is approximately 90%, but the observed full-run result—not the
+target—must be reported. Corruption robustness, calibration, selective accuracy,
+and OOD rejection are separate evaluations.
 
 For project context, read the [project brief](docs/project-brief.md) and
 [research reference](docs/allen-schmaltz-sdm.md).
