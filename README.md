@@ -13,6 +13,8 @@ The goal is to build models that can selectively abstain from uncertain predicti
 ## Project Documents
 
 - [Start here: CIFAR-100 EDA notebook](notebooks/01_cifar100_eda.ipynb)
+- [Train a ResNet-18 CNN on CIFAR-100](notebooks/02_cifar100_cnn_resnet18.ipynb)
+- [Experiment design: from-scratch ResNet-18 as the primary model](docs/experiment-design.md)
 - [Initial project idea and requirements](docs/project-brief.md)
 - [Allen Schmaltz’s research overview and attached poster](docs/allen-schmaltz-sdm.md)
 - [Pinned upstream SDM checkout](docs/upstream-sdm.md)
@@ -99,8 +101,10 @@ sdm-vision-reliability/
 ├── README.md
 ├── requirements.txt
 ├── notebooks/
-│   └── 01_cifar100_eda.ipynb
+│   ├── 01_cifar100_eda.ipynb
+│   └── 02_cifar100_cnn_resnet18.ipynb
 └── docs/
+    ├── experiment-design.md
     ├── project-brief.md
     ├── allen-schmaltz-sdm.md
     └── assets/
@@ -109,6 +113,13 @@ sdm-vision-reliability/
 
 The notebook explores CIFAR-100 training images, class names, class balance, and
 pixel values. It includes questions for the team to discuss before modeling.
+
+The ResNet-18 notebook trains a CNN from scratch with PyTorch, using the same
+training/validation/calibration split as the ConvNeXt baseline. It fits temperature
+scaling and a 95%-selective-accuracy abstention threshold on the calibration split and
+checks both on validation, as the baseline for SDM. It saves the model and its
+validation/calibration logits and embeddings to `outputs/` (ignored by Git). Training
+takes about 30 minutes on an Apple-silicon or NVIDIA GPU.
 
 ## Getting Started
 
@@ -120,7 +131,7 @@ cd sdm-vision-reliability
 ### Open the first-look notebook
 
 Use Python 3.12. From the repository folder, create an environment outside the
-repository, install the four dependencies, and start JupyterLab:
+repository, install the dependencies, and start JupyterLab:
 
 ```bash
 python3.12 -m venv ~/.venvs/sdm-eda
@@ -137,17 +148,19 @@ py -3.12 -m venv "$HOME\.venvs\sdm-eda"
 ```
 
 In JupyterLab, choose **Kernel → Restart Kernel and Run All Cells**. The first run
-downloads about 169 MB of CIFAR-100 data; later runs reuse the file in
-`~/.cache/sdm-vision-reliability/`. You can change `DATA_DIR` in the notebook.
-The download can take a few minutes. No GPU setup is required.
+unpacks `data/cifar-100-python.tar.gz` if you have put the official archive there;
+otherwise it downloads about 161 MB of CIFAR-100 data from a Kaggle mirror via
+`kagglehub` (no Kaggle account needed) into `~/.cache/kagglehub/`. Later runs reuse
+the files, and the notebook checks each one against the official checksums. No GPU
+setup is required.
 
 You will see image and class galleries, dataset dimensions, label counts, and
 color histograms. Try changing `CLASS_NAME` and write your observations in the
 last cell. This first notebook uses only training data; the test set and
 corruption/OOD experiments are reserved for later work.
 
-Keep downloaded data and local environments outside Git. No `.gitignore` is
-included. The notebook is saved with cleared outputs; use **Run All** to populate
+Keep downloaded data and local environments outside Git; the `.gitignore` already
+excludes `data/`. The notebook is saved with cleared outputs; use **Run All** to populate
 the tables and plots. Clear outputs before committing notebook edits.
 
 For project context, read the [project brief](docs/project-brief.md) and
