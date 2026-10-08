@@ -14,6 +14,7 @@ The goal is to build models that can selectively abstain from uncertain predicti
 
 - [Start here: CIFAR-100 EDA notebook](notebooks/01_cifar100_eda.ipynb)
 - [Train a ResNet-18 CNN on CIFAR-100](notebooks/02_cifar100_cnn_resnet18.ipynb)
+- [SDM on the ResNet-18: first experiment](notebooks/03_sdm_resnet18.ipynb)
 - [Experiment design: from-scratch ResNet-18 as the primary model](docs/experiment-design.md)
 - [Initial project idea and requirements](docs/project-brief.md)
 - [Allen Schmaltz’s research overview and attached poster](docs/allen-schmaltz-sdm.md)
@@ -102,7 +103,8 @@ sdm-vision-reliability/
 ├── requirements.txt
 ├── notebooks/
 │   ├── 01_cifar100_eda.ipynb
-│   └── 02_cifar100_cnn_resnet18.ipynb
+│   ├── 02_cifar100_cnn_resnet18.ipynb
+│   └── 03_sdm_resnet18.ipynb
 └── docs/
     ├── experiment-design.md
     ├── project-brief.md
@@ -120,6 +122,11 @@ scaling and a 95%-selective-accuracy abstention threshold on the calibration spl
 checks both on validation, as the baseline for SDM. It saves the model and its
 validation/calibration logits and embeddings to `outputs/` (ignored by Git). Training
 takes about 30 minutes on an Apple-silicon or NVIDIA GPU.
+
+The SDM notebook applies the `reexpress-sdm` estimator to the ResNet-18's embeddings,
+on all 100 classes and on the 20 broader groups, and compares it with the
+temperature-scaled softmax baseline on the same validation images. Run the ResNet-18
+notebook first; the SDM notebook takes about 12 minutes.
 
 ## Getting Started
 
