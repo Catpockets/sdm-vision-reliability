@@ -173,6 +173,34 @@ the tables and plots. Clear outputs before committing notebook edits.
 For project context, read the [project brief](docs/project-brief.md) and
 [research reference](docs/allen-schmaltz-sdm.md).
 
+## Dataset reliability notebooks 05–10
+
+The six independent reliability notebooks apply notebook 04's precision/recall,
+temperature, calibration, selective-prediction, confusion, and recall-versus-coverage
+comparisons to different datasets:
+
+| Notebook | Dataset |
+|---|---|
+| [05](notebooks/05_cifar10_sdm_calibration_comparison.ipynb) | CIFAR-10 |
+| [06](notebooks/06_mnist_sdm_calibration_comparison.ipynb) | MNIST |
+| [07](notebooks/07_fashion_mnist_sdm_calibration_comparison.ipynb) | Fashion-MNIST |
+| [08](notebooks/08_kmnist_sdm_calibration_comparison.ipynb) | KMNIST |
+| [09](notebooks/09_emnist_balanced_sdm_calibration_comparison.ipynb) | EMNIST Balanced |
+| [10](notebooks/10_svhn_sdm_calibration_comparison.ipynb) | SVHN |
+
+With a compatible PyTorch/torchvision training environment active:
+
+```bash
+python -m pip install -r requirements-training.txt
+python -m jupyterlab notebooks/05_cifar10_sdm_calibration_comparison.ipynb
+```
+
+Full runs train a separate ConvNeXt-Tiny model per dataset; GPU execution is
+recommended. For a small pipeline check, use
+`python scripts/run_dataset_notebook.py --dataset mnist --mode smoke`.
+See [setup, evaluation protocol, and saved artifacts](docs/dataset-reliability-notebooks.md)
+for all metrics, offline preparation, cache locations, and validation details.
+
 ## Status
 
 🚧 **Active Research Project**
