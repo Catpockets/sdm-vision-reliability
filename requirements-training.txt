@@ -1,0 +1,5 @@
+# Notebook 02–10 training dependencies; install a matching torch/torchvision pair.
+-r requirements.txt
+torch>=2.5,<3
+torchvision>=0.20,<1
+scipy>=1.14,<2
