@@ -106,3 +106,6 @@ CPU, and waits for the training supervisor to finish before starting GPU shift
 runs. It refreshes the result/inventory CSVs from completed jobs and records any
 failure in its own `status.json`. Use a one-off process supervisor with automatic
 restarts disabled; this is a batch dependency chain, not an agent schedule.
+
+For comparison rules, planned tables/figures, uncertainty limits and the report
+outline, use the [experiment design and analysis plan](experiment-design.md).
