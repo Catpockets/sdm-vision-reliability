@@ -130,5 +130,36 @@ class ShiftEvaluationTest(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError,'checksum mismatch'):
                     run_shift_campaign.prepare(root)
 
+    def test_legacy_ood_and_corruption_summaries_allow_no_admissions(self):
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        import contextlib
+        names={'12': ['5cd65bf1','80660daf'], '13':['f6a7b8c9','a7b8c9d0']}
+        with tempfile.TemporaryDirectory() as directory, patch.object(plt,'show',side_effect=lambda:plt.close('all')):
+            for number,cell_ids in names.items():
+                path=next((ROOT/'notebooks').glob(number+'_cifar100*.ipynb'))
+                notebook=json.loads(path.read_text())
+                digits=type('Digits',(),{'labels':np.arange(5),'__len__':lambda self:5})()
+                namespace=dict(np=np,json=json,plt=plt,RUN_DIR=Path(directory),TEMPERATURE=1.,
+                               THRESHOLDS={'softmax':None,'temp-scaled':None},
+                               softmax_with_temperature=metric_functions()['temperature_probabilities'],
+                               metric_functions=metric_functions,svhn=digits,svhn_logits=np.zeros((5,100)),
+                               test_raw=np.full((4,100),.01),test_scaled=np.full((4,100),.01),
+                               cifar100_names=[str(i) for i in range(100)],CORRUPTIONS=('gaussian_noise',),
+                               SEVERITIES=(1,),SCOPE_NAME='fixture',SCOPE={'name':'fixture'},DATA_SOURCE={'source':'fixture'},
+                               CLEAN={'accuracy':0.,'softmax':0.,'temp-scaled':0.},
+                               RESULTS={('gaussian_noise',1):(np.zeros((5,100)),np.arange(5))})
+                with contextlib.redirect_stdout(io.StringIO()):
+                    for cell in notebook['cells']:
+                        if cell['id'] in cell_ids:
+                            exec(compile(''.join(cell['source']),cell['id'],'exec'),namespace)
+                if number=='12':
+                    self.assertEqual(namespace['metrics']['metrics']['softmax']['admission_rate_at_frozen_threshold'],0)
+                    self.assertEqual(namespace['metrics']['metrics']['softmax']['id_vs_ood_auroc'],.5)
+                else:
+                    self.assertEqual(namespace['METRICS'][('gaussian_noise',1)]['softmax']['admission_rate'],0)
+                    self.assertTrue(np.isnan(namespace['METRICS'][('gaussian_noise',1)]['softmax']['accepted_accuracy']))
+
 
 if __name__ == '__main__':unittest.main()

@@ -18,6 +18,8 @@ raw softmax, temperature scaling and identity-adaptor SDM on nested 25/100-per-c
 calibration tracks. ResNet uses its original temperature fit and the saved
 reexpress-sdm fine-100/coarse-20 artifacts; its SDM adaptor may change predictions.
 These are distinct method variants and class counts, not interchangeable runs.
+ResNet centroid/lower rows select different admission policies on the same fitted
+model; both use its central SDM probabilities for probability/ranking metrics.
 
 Before evaluating any condition, the evaluator checks disjoint splits, completion,
 original sample identities, and class counts. It replays eight calibration and
