@@ -74,6 +74,8 @@ Five methods share the same raw-logit predictions: raw softmax, temperature soft
 
 Macro metrics average over classes observed in the true evaluation labels. Undefined class precision is set to zero; recall is undefined for unobserved true classes. Abstentions remain in recall's denominator. With no admissions, micro precision is undefined and recall is zero. Temperature search is limited to `[0.01, 100]` and bound fits are flagged. The 95% HR target and retrospective coverage curves are empirical diagnostics, not guarantees under distribution shift.
 
+Equal-confidence groups enter together in every ranking and selective metric. Error AUPRC is average precision at complete score groups. AURC uses the right-endpoint step integral across attainable coverage intervals, including the interval from zero to the first group. Fixed-coverage accuracy uses the largest attainable threshold coverage within the requested budget; the table also exports `actual_coverage_at_*pct_budget`. When no group fits, accuracy is undefined and actual coverage is zero. These definitions correct the previous row-order-dependent metrics; regenerate older tables before comparing them with these runs.
+
 SDM matches notebook 04's frozen identity-adaptor variant and pinned upstream implementation. Exact nearest-neighbor search is batched, retaining only each query's similarity count and closest exemplar rather than every neighbor array. This limits memory use as training support grows.
 
 ## Saved results and provenance
