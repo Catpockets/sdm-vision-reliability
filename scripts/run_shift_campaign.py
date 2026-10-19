@@ -34,12 +34,15 @@ def prepare(data_root):
     archive = data_root / 'CIFAR-100-C.tar'
     partial = data_root / 'CIFAR-100-C.tar.download'
     if not archive.exists():
-        subprocess.run(['curl', '--fail', '--location', '--silent', '--show-error',
+        if partial.exists() and partial.stat().st_size == SIZE and digest(partial) == MD5:
+            partial.replace(archive)
+        else:
+            subprocess.run(['curl', '--fail', '--location', '--silent', '--show-error',
                         '--connect-timeout', '15', '--max-time', '1800', '--continue-at', '-',
                         URL, '--output', str(partial)], check=True)
-        if partial.stat().st_size != SIZE or digest(partial) != MD5:
-            raise ValueError('Official corruption archive integrity check failed; not extracting')
-        partial.replace(archive)
+            if partial.stat().st_size != SIZE or digest(partial) != MD5:
+                raise ValueError('Official corruption archive integrity check failed; not extracting')
+            partial.replace(archive)
     if archive.stat().st_size != SIZE or digest(archive) != MD5:
         raise ValueError('Corruption archive checksum mismatch')
     from evaluate_matched_shift import CORRUPTIONS

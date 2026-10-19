@@ -52,6 +52,7 @@ ResNet's clean reference is **validation**; ConvNeXt's is **official test**.
 CIFAR-100-C derives from official CIFAR-100 test images and labels. Corruption
 results therefore constitute held-out test-derived evidence even when ResNet's
 clean official test has not been opened; never tune choices from those results.
+Corruption/severity slices reuse the same underlying test images; do not pool them as independent observations.
 SVHN rows report false admission and ID-versus-OOD AUROC, with no fabricated CIFAR
 accuracy. Coarse-20 classification and fine-100 classification remain separate.
 

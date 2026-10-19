@@ -4,6 +4,10 @@ import json
 from pathlib import Path
 import sys
 import tempfile
+import hashlib
+import io
+import tarfile
+from unittest.mock import patch
 from types import SimpleNamespace
 import unittest
 
@@ -15,6 +19,7 @@ sys.path[:0] = [str(ROOT/'notebooks'), str(ROOT/'scripts')]
 from shift_metrics import admission_mask, artifact_identity, metric_functions, threshold_for_target, verify_identity
 from evaluate_matched_shift import CorruptionSlice, summarize, validate_splits, verify_replay
 from collect_experiment_results import collect, comparison_group
+import run_shift_campaign
 
 
 class ShiftEvaluationTest(unittest.TestCase):
@@ -106,6 +111,24 @@ class ShiftEvaluationTest(unittest.TestCase):
             rows,inventory=collect(root,[smoke])
             self.assertTrue(rows.empty)
             self.assertEqual(list(inventory.status),['queued','excluded_pipeline_check'])
+
+    def test_archive_integrity_is_checked_before_safe_extraction(self):
+        from evaluate_matched_shift import CORRUPTIONS
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            archive=root/'CIFAR-100-C.tar'
+            with tarfile.open(archive,'w') as output:
+                for name in [*(c+'.npy' for c in CORRUPTIONS),'labels.npy']:
+                    item=tarfile.TarInfo('CIFAR-100-C/'+name)
+                    payload=b'preparation fixture';item.size=len(payload)
+                    output.addfile(item,io.BytesIO(payload))
+            expected=hashlib.md5(archive.read_bytes()).hexdigest()
+            with patch.object(run_shift_campaign,'SIZE',archive.stat().st_size), patch.object(run_shift_campaign,'MD5',expected):
+                run_shift_campaign.prepare(root)
+                self.assertEqual(json.loads((root/'CIFAR-100-C/SOURCE.json').read_text())['archive_md5'],expected)
+                with archive.open('ab') as output:output.write(b'corruption')
+                with self.assertRaisesRegex(ValueError,'checksum mismatch'):
+                    run_shift_campaign.prepare(root)
 
 
 if __name__ == '__main__':unittest.main()

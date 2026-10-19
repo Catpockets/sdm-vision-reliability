@@ -57,7 +57,9 @@ def collect(campaign, shift_dirs=()):
                     threshold = checkpoint['thresholds']['plain']
                     admitted = np.zeros(len(labels), dtype=bool) if threshold is None else probabilities.max(1) >= threshold
                     selection = selective_statistics(logits.argmax(1), labels, admitted)
-                    row.update(frozen_rule_coverage=selection['coverage'], frozen_rule_accuracy=selection['accepted_accuracy'])
+                    row.update(frozen_rule_coverage=selection['coverage'], frozen_rule_accuracy=selection['accepted_accuracy'],
+                               frozen_rule_accuracy_low95=selection['accepted_accuracy_low95'],
+                               frozen_rule_accuracy_high95=selection['accepted_accuracy_high95'])
                 rows.append(row)
         elif job['id'] == 'resnet18_sdm':
             # SDM aggregates are ingested from the matched evaluator, avoiding a new fit/re-score here.
@@ -106,6 +108,8 @@ def collect(campaign, shift_dirs=()):
                 record['track'] = 'standard_25'
             record['frozen_rule_coverage'] = record.pop('coverage')
             record['frozen_rule_accuracy'] = record.pop('accepted_accuracy')
+            record['frozen_rule_accuracy_low95'] = record.pop('accepted_accuracy_low95')
+            record['frozen_rule_accuracy_high95'] = record.pop('accepted_accuracy_high95')
             rows.append(dict(record, dataset='cifar100', source_file=str(directory / 'matched_shift_metrics.csv')))
     for row in rows: row['comparison_group'] = comparison_group(row)
     if rows:
