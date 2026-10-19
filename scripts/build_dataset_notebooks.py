@@ -139,7 +139,7 @@ np.savez_compressed(RUN_DIR / "split_indices.npz", **splits)
 
 loader_options = {
     "batch_size": BATCH_SIZE, "num_workers": NUM_WORKERS,
-    "pin_memory": DEVICE.type == "cuda", "persistent_workers": NUM_WORKERS > 0,
+    "pin_memory": DEVICE.type == "cuda", "persistent_workers": False,  # Recreate seeded workers at epoch boundaries.
 }
 train_loader = DataLoader(
     Subset(train_aug_base, train_indices), shuffle=True,
@@ -181,21 +181,6 @@ plt.show()
 model.classifier[2] =''')
     replace('1e00ebcf', 'in_features, 100)', 'in_features, NUM_CLASSES)')
     replace('1e00ebcf', 'logits.topk(5, dim=1)', 'logits.topk(min(5, NUM_CLASSES), dim=1)')
-    replace('1e00ebcf', 'checkpoint = torch.load(checkpoint_path, map_location=DEVICE, weights_only=False) if checkpoint_path.exists() else None', '''checkpoint = torch.load(checkpoint_path, map_location=DEVICE, weights_only=False) if checkpoint_path.exists() and not FORCE_RETRAIN else None
-compatibility_keys = (
-    "dataset", "number_of_classes", "run_mode", "seed", "model_name", "image_size",
-    "epochs", "batch_size", "learning_rate", "weight_decay", "label_smoothing",
-    "calibration_images_per_class", "validation_images_per_class", "preprocessing_version",
-)
-if checkpoint:
-    if any(checkpoint.get("config", {}).get(key) != CONFIG[key] for key in compatibility_keys):
-        raise ValueError("Checkpoint configuration mismatch. Use a new SDM_RUN_DIR or SDM_FORCE_RETRAIN=1.")
-    if checkpoint.get("class_names") != CLASS_NAMES:
-        raise ValueError("Checkpoint class mapping mismatch.")
-    if not checkpoint.get("training_complete", False):
-        print("Restarting incomplete training; complete checkpoints alone are reused.")
-        checkpoint = None''')
-    replace('1e00ebcf', '    checkpoint["training_complete"] = True', '    checkpoint["history"] = history\n    checkpoint["training_complete"] = True')
     replace('463f20b7', '''# The enlarged loader is ordered class-by-class, 100 examples per class in a full run.
 if SMOKE:
     standard_mask = np.arange(len(calibration_all["targets"])) < min(len(calibration_all["targets"]), BATCH_SIZE)
