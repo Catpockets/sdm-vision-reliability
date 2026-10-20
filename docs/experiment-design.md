@@ -230,3 +230,6 @@ unconfirmed in #6. No author, speaking role, deadline or team decision is assign
 by this outline.
 
 See [matched evaluation and collection commands](matched-shift-evaluation.md).
+
+The [research write-up draft](research-writeup.md) contains the narrative methods
+and dated preliminary clean results, with its own aggregate evidence snapshot.

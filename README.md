@@ -16,6 +16,7 @@ The goal is to build models that can selectively abstain from uncertain predicti
 - [Train a ResNet-18 CNN on CIFAR-100](notebooks/02_cifar100_cnn_resnet18.ipynb)
 - [SDM on the ResNet-18: first experiment](notebooks/03_sdm_resnet18.ipynb)
 - [Experiment design, analysis plan and write-up structure](docs/experiment-design.md)
+- [Research write-up draft and preliminary clean results](docs/research-writeup.md)
 - [Initial project idea and requirements](docs/project-brief.md)
 - [Allen Schmaltz’s research overview and attached poster](docs/allen-schmaltz-sdm.md)
 - [Pinned upstream SDM checkout](docs/upstream-sdm.md)
