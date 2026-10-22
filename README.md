@@ -15,6 +15,13 @@ The goal is to build models that can selectively abstain from uncertain predicti
 - [Start here: CIFAR-100 EDA notebook](notebooks/01_cifar100_eda.ipynb)
 - [Train a ResNet-18 CNN on CIFAR-100](notebooks/02_cifar100_cnn_resnet18.ipynb)
 - [SDM on the ResNet-18: first experiment](notebooks/03_sdm_resnet18.ipynb)
+- [Retrain the ResNet-18 with 100 calibration images per class](notebooks/04_cifar100_resnet18_cal100.ipynb)
+- [SDM with 100 calibration images per class](notebooks/05_sdm_resnet18_cal100.ipynb)
+- [SDM behind a 90% confidence gate](notebooks/06_sdm_resnet18_cal100_gated.ipynb)
+- [SDM on the classes the ResNet handles well](notebooks/07_sdm_resnet18_cal100_selected_classes.ipynb)
+- [Train a ResNet-18 on Imagenette (larger images)](notebooks/08_imagenette_resnet18.ipynb)
+- [SDM on Imagenette, compared with CIFAR-100](notebooks/09_sdm_resnet18_imagenette.ipynb)
+- [Summary: Imagenette against CIFAR-100 (accuracy, calibration, coverage, SDM)](notebooks/10_summary_imagenette_vs_cifar100.ipynb)
 - [Experiment design: from-scratch ResNet-18 as the primary model](docs/experiment-design.md)
 - [Initial project idea and requirements](docs/project-brief.md)
 - [Allen Schmaltz’s research overview and attached poster](docs/allen-schmaltz-sdm.md)
@@ -104,7 +111,14 @@ sdm-vision-reliability/
 ├── notebooks/
 │   ├── 01_cifar100_eda.ipynb
 │   ├── 02_cifar100_cnn_resnet18.ipynb
-│   └── 03_sdm_resnet18.ipynb
+│   ├── 03_sdm_resnet18.ipynb
+│   ├── 04_cifar100_resnet18_cal100.ipynb
+│   ├── 05_sdm_resnet18_cal100.ipynb
+│   ├── 06_sdm_resnet18_cal100_gated.ipynb
+│   ├── 07_sdm_resnet18_cal100_selected_classes.ipynb
+│   ├── 08_imagenette_resnet18.ipynb
+│   ├── 09_sdm_resnet18_imagenette.ipynb
+│   └── 10_summary_imagenette_vs_cifar100.ipynb
 └── docs/
     ├── experiment-design.md
     ├── project-brief.md
