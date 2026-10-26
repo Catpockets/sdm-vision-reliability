@@ -22,6 +22,7 @@ The goal is to build models that can selectively abstain from uncertain predicti
 - [Train a ResNet-18 on Imagenette (larger images)](notebooks/08_imagenette_resnet18.ipynb)
 - [SDM on Imagenette, compared with CIFAR-100](notebooks/09_sdm_resnet18_imagenette.ipynb)
 - [Summary: Imagenette against CIFAR-100 (accuracy, calibration, coverage, SDM)](notebooks/10_summary_imagenette_vs_cifar100.ipynb)
+- [Number of classes: CIFAR-10 against Imagenette, K = 2 to 10, softmax against SDM](notebooks/11_class_count_sweep.ipynb) (results from `python experiments/class_sweep.py`)
 - [Experiment design: from-scratch ResNet-18 as the primary model](docs/experiment-design.md)
 - [Initial project idea and requirements](docs/project-brief.md)
 - [Allen Schmaltz’s research overview and attached poster](docs/allen-schmaltz-sdm.md)
@@ -119,7 +120,11 @@ sdm-vision-reliability/
 │   ├── 07_sdm_resnet18_cal100_selected_classes.ipynb
 │   ├── 08_imagenette_resnet18.ipynb
 │   ├── 09_sdm_resnet18_imagenette.ipynb
-│   └── 10_summary_imagenette_vs_cifar100.ipynb
+│   ├── 10_summary_imagenette_vs_cifar100.ipynb
+│   └── 11_class_count_sweep.ipynb
+├── src/sdm_vision/          # shared code for the class-count sweep
+├── experiments/
+│   └── class_sweep.py       # trains and evaluates the 54 sweep runs
 └── docs/
     ├── experiment-design.md
     ├── project-brief.md
