@@ -4,7 +4,8 @@ Each chain adds the classes in its own random order (sdm_vision.data.class_order
 contains the (K-1)-class task plus one new class. Every run trains a fresh ResNet-18, fits the temperature
 and SDM on calibration, and evaluates on validation: the K classes' images (in-set) and, for K < 10,
 the excluded classes' images (out-of-distribution). Results go to <out>/<dataset>/chain<c>_K<k>/;
-a run whose metrics.json exists is skipped, so the sweep can be stopped and resumed.
+a run with the current evaluation_version is skipped, so the sweep can be stopped and resumed.
+Legacy metrics are preserved and rejected; use a new --out directory for corrected runs.
 
     python experiments/class_sweep.py --dataset cifar10 imagenette --chains 3 --k 2-10
     python experiments/class_sweep.py --k 2-4 --steps 1600 --out outputs/class_sweep_fixed_steps
@@ -70,6 +71,7 @@ def run_one(dataset, images, labels, class_names, split, chain, k, args, device)
     artifact = sdm.fit_sdm(embeddings["train"], y["train"], embeddings["calibration"], y["calibration"], names, device,
                            fingerprint=f"{dataset}_chain{chain}_K{k}", epochs=args.sdm_epochs, seed=chain)
     assert sdm.ladder_is_consistent(artifact, k), "region_ladder does not reproduce SDM's regions"
+    sdm_cal = sdm.score(artifact, embeddings["calibration"], device)
     sdm_val = sdm.score(artifact, embeddings["validation"], device)
     sdm_ood = sdm.score(artifact, embeddings["ood"], device) if len(ood_index) else None
 
@@ -84,6 +86,7 @@ def run_one(dataset, images, labels, class_names, split, chain, k, args, device)
     labels_t = torch.from_numpy(y_val).long()
     low, high = metrics.wilson_interval(val_correct.sum(), len(val_correct))
     result = {
+        "evaluation_version": metrics.EVALUATION_VERSION,
         "dataset": dataset, "chain": chain, "k": k, "classes": names, "class_ids": classes.tolist(),
         "excluded": [class_names[c] for c in excluded], "epochs": epochs, "train_steps": epochs * steps_per_epoch, "seed": chain,
         "n_train": len(y["train"]), "n_calibration": len(y_cal), "n_validation": len(y_val), "n_ood": int(len(ood_index)),
@@ -125,15 +128,18 @@ def run_one(dataset, images, labels, class_names, split, chain, k, args, device)
         result[f"sdm_accuracy_{name}"] = metrics.accuracy(sdm_correct[admit])
     result["sdm_worst_class_precision_top"] = metrics.worst_class_precision(sdm_admit["top"], sdm_val["prediction"], sdm_correct)
 
-    # Softmax at the same coverage as SDM's top region, with the threshold set on calibration (notebooks 07-10).
+    # Match SDM's top-region coverage on calibration only; validation coverages can differ.
     n = len(y_val)
     aurc_difference = lambda i: metrics.aurc(val_conf[i], val_correct[i]) - metrics.aurc(sdm_val["probability"][i], sdm_correct[i])
     result["aurc_softmax_minus_sdm"] = aurc_difference(np.arange(n))
     result["aurc_softmax_minus_sdm_interval"] = metrics.paired_bootstrap(aurc_difference, n)
     matched = np.zeros(n, bool)
     if regions:
-        matched_threshold = float(np.quantile(cal_conf, 1 - sdm_admit["top"].mean()))
-        matched = val_conf >= matched_threshold
+        calibration_coverage = float((sdm_cal["centroid_alpha"] >= regions[0] - 1e-9).mean())
+        matched_threshold = metrics.threshold_for_coverage(cal_conf, calibration_coverage)
+        matched = metrics.admitted(val_conf, matched_threshold)
+        result["matched_calibration_sdm_coverage"] = calibration_coverage
+        result["matched_calibration_softmax_coverage"] = float(metrics.admitted(cal_conf, matched_threshold).mean())
         result["matched_softmax_threshold"] = matched_threshold
         result["matched_softmax_coverage"] = float(matched.mean())
         result["matched_softmax_accuracy"] = metrics.accuracy(val_correct[matched])
@@ -151,7 +157,7 @@ def run_one(dataset, images, labels, class_names, split, chain, k, args, device)
             "ood_sdm_answered_095": float((sdm_ood["centroid_alpha"] >= 0.95 - 1e-9).mean()),
             "ood_sdm_answered_top": float((sdm_ood["centroid_alpha"] >= (regions[0] - 1e-9 if regions else np.inf)).mean()),
             "ood_sdm_answered_any": float((sdm_ood["centroid_alpha"] > 0).mean()),
-            "ood_softmax_answered_matched": float((ood_conf >= result["matched_softmax_threshold"]).mean()) if regions else None,
+            "ood_softmax_answered_matched": float(metrics.admitted(ood_conf, result["matched_softmax_threshold"]).mean()) if regions else None,
             "ood_sdm_flag_rate": float(sdm_ood["is_ood"].mean()),
             # How well each score separates in-set (high) from excluded-class (low) images.
             "ood_softmax_auroc": metrics.auroc(np.r_[val_conf, ood_conf], ~is_ood),
@@ -160,6 +166,7 @@ def run_one(dataset, images, labels, class_names, split, chain, k, args, device)
 
     scores = {"temperature": temperature, "val_labels": y_val, "cal_labels": y_cal,
               "val_logits": logits["validation"].numpy(), "cal_logits": logits["calibration"].numpy(),
+              **{f"sdm_cal_{key}": value for key, value in sdm_cal.items()},
               **{f"sdm_val_{key}": value for key, value in sdm_val.items()}}
     if sdm_ood is not None:
         scores |= {"ood_logits": logits["ood"].numpy(), "ood_labels": labels[ood_index],
@@ -190,6 +197,9 @@ def main():
             for k in args.k:
                 folder = args.out / dataset / f"chain{chain}_K{k}"
                 if (folder / "metrics.json").exists():
+                    saved = json.loads((folder / "metrics.json").read_text())
+                    if saved.get("evaluation_version") != metrics.EVALUATION_VERSION:
+                        raise ValueError(f"{folder}: legacy evaluation metrics; preserve this run and use a new --out directory")
                     print(f"  K={k:2d}: done earlier, skipped", flush=True)
                     continue
                 start = time.time()
