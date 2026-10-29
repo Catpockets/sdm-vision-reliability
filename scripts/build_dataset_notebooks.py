@@ -1,4 +1,4 @@
-"""Generate notebooks 05–10 from the reviewed notebook 04 protocol.
+"""Generate notebooks 14–19 from the reviewed notebook 04 protocol.
 
 Run from any directory: python scripts/build_dataset_notebooks.py
 Only source cells are copied. Notebook 04 and its local outputs are never changed.
@@ -11,12 +11,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = ROOT / 'notebooks/04_cifar100_sdm_calibration_comparison.ipynb'
 CATALOG = [
-    ('05', 'cifar10', 'CIFAR-10', 10, 'CIFAR10', 'Natural-image classification; random crops and horizontal flips are used only for training.'),
-    ('06', 'mnist', 'MNIST', 10, 'MNIST', 'Handwritten digit classification; grayscale is replicated into three channels. No digit flips are used.'),
-    ('07', 'fashion_mnist', 'Fashion-MNIST', 10, 'FashionMNIST', 'Clothing classification; grayscale is replicated into three channels and mild affine augmentation is used for training.'),
-    ('08', 'kmnist', 'KMNIST', 10, 'KMNIST', 'Kuzushiji character classification; retain the dataset\'s ten class names and use no character flips.'),
-    ('09', 'emnist_balanced', 'EMNIST Balanced', 47, 'EMNIST', 'Use the **balanced** split with 47 zero-based classes, not the separate letters/digits variants. Apply the same upright transpose to training and evaluation images. Inspect the gallery before interpreting results.'),
-    ('10', 'svhn', 'SVHN', 10, 'SVHN', 'Train on the official **train** split and evaluate on **test**. The optional extra split is unused. Torchvision maps original label 10 to digit 0. This is an in-distribution SVHN classifier, separate from using SVHN as OOD for a CIFAR classifier. No digit flips are used.'),
+    ('14', 'cifar10', 'CIFAR-10', 10, 'CIFAR10', 'Natural-image classification; random crops and horizontal flips are used only for training.'),
+    ('15', 'mnist', 'MNIST', 10, 'MNIST', 'Handwritten digit classification; grayscale is replicated into three channels. No digit flips are used.'),
+    ('16', 'fashion_mnist', 'Fashion-MNIST', 10, 'FashionMNIST', 'Clothing classification; grayscale is replicated into three channels and mild affine augmentation is used for training.'),
+    ('17', 'kmnist', 'KMNIST', 10, 'KMNIST', 'Kuzushiji character classification; retain the dataset\'s ten class names and use no character flips.'),
+    ('18', 'emnist_balanced', 'EMNIST Balanced', 47, 'EMNIST', 'Use the **balanced** split with 47 zero-based classes, not the separate letters/digits variants. Apply the same upright transpose to training and evaluation images. Inspect the gallery before interpreting results.'),
+    ('19', 'svhn', 'SVHN', 10, 'SVHN', 'Train on the official **train** split and evaluate on **test**. The optional extra split is unused. Torchvision maps original label 10 to digit 0. This is an in-distribution SVHN classifier, separate from using SVHN as OOD for a CIFAR classifier. No digit flips are used.'),
 ]
 
 

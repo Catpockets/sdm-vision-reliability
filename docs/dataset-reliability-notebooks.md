@@ -1,15 +1,15 @@
-# Dataset reliability notebooks 05–10
+# Dataset reliability notebooks 14–19
 
 Each notebook trains its own ImageNet-pretrained ConvNeXt-Tiny classifier and reproduces the updated notebook 04 experiment. The notebooks are independent; none needs outputs from a previous dataset notebook.
 
 | Notebook | Dataset | Classes | Dataset-specific handling |
 |---|---|---:|---|
-| [05](../notebooks/05_cifar10_sdm_calibration_comparison.ipynb) | CIFAR-10 | 10 | RGB natural images; training crops and horizontal flips |
-| [06](../notebooks/06_mnist_sdm_calibration_comparison.ipynb) | MNIST | 10 | Grayscale replicated to RGB; mild affine augmentation, no flips |
-| [07](../notebooks/07_fashion_mnist_sdm_calibration_comparison.ipynb) | Fashion-MNIST | 10 | Grayscale clothing images; mild affine augmentation |
-| [08](../notebooks/08_kmnist_sdm_calibration_comparison.ipynb) | KMNIST | 10 | Kuzushiji characters; preserve class names, no flips |
-| [09](../notebooks/09_emnist_balanced_sdm_calibration_comparison.ipynb) | EMNIST Balanced | 47 | Explicit `balanced` split, upright transpose, zero-based labels |
-| [10](../notebooks/10_svhn_sdm_calibration_comparison.ipynb) | SVHN | 10 | Official train/test splits, no extra split, digit 0 mapped by torchvision, no flips |
+| [14](../notebooks/14_cifar10_sdm_calibration_comparison.ipynb) | CIFAR-10 | 10 | RGB natural images; training crops and horizontal flips |
+| [15](../notebooks/15_mnist_sdm_calibration_comparison.ipynb) | MNIST | 10 | Grayscale replicated to RGB; mild affine augmentation, no flips |
+| [16](../notebooks/16_fashion_mnist_sdm_calibration_comparison.ipynb) | Fashion-MNIST | 10 | Grayscale clothing images; mild affine augmentation |
+| [17](../notebooks/17_kmnist_sdm_calibration_comparison.ipynb) | KMNIST | 10 | Kuzushiji characters; preserve class names, no flips |
+| [18](../notebooks/18_emnist_balanced_sdm_calibration_comparison.ipynb) | EMNIST Balanced | 47 | Explicit `balanced` split, upright transpose, zero-based labels |
+| [19](../notebooks/19_svhn_sdm_calibration_comparison.ipynb) | SVHN | 10 | Official train/test splits, no extra split, digit 0 mapped by torchvision, no flips |
 
 SVHN here is an in-distribution classification experiment. These notebooks do not replace separate SVHN-as-OOD or corrupted-CIFAR evaluations. The MNIST-derived datasets are distinct benchmarks, not alternative splits of one training run. Cross-dataset metric differences also reflect different class counts and task difficulty.
 
@@ -19,7 +19,7 @@ Use Python 3.12. Activate the training environment containing a compatible PyTor
 
 ```bash
 python -m pip install -r requirements-training.txt
-python -m jupyterlab notebooks/05_cifar10_sdm_calibration_comparison.ipynb
+python -m jupyterlab notebooks/14_cifar10_sdm_calibration_comparison.ipynb
 ```
 
 For NVIDIA CUDA wheels, follow the [official installation selector](https://pytorch.org/get-started/locally/) for the installed driver and hardware. CPU and MPS fallbacks work but full ConvNeXt runs are expensive. SciPy is required for the SVHN `.mat` loader.
@@ -33,7 +33,7 @@ The environment variables `SDM_EPOCHS` and `SDM_BATCH_SIZE` can set training res
 Start Jupyter in smoke mode:
 
 ```bash
-SDM_RUN_MODE=smoke python -m jupyterlab notebooks/06_mnist_sdm_calibration_comparison.ipynb
+SDM_RUN_MODE=smoke python -m jupyterlab notebooks/15_mnist_sdm_calibration_comparison.ipynb
 ```
 
 Or execute all cells using the same Python interpreter without a Jupyter kernel:
@@ -100,4 +100,4 @@ python scripts/build_dataset_notebooks.py
 python -m unittest discover -s tests
 ```
 
-Regeneration requires notebook 04's precision/recall/temperature updates from PR #27. Tests verify exact metric-function parity, all six schemas, label adapters, preprocessing, disjoint splits with class imbalance, streamed neighbor signals, and six complete synthetic smoke pipelines. Synthetic fixtures use a tiny backbone and do not establish benchmark accuracy. A real MNIST CUDA smoke run additionally checks the actual loader and ConvNeXt path; full dataset downloads and full training still require lead validation.
+These notebooks use the ConvNeXt notebook `04_cifar100_sdm_calibration_comparison.ipynb` as their template (PR #27, now merged). Numbers 14–19 follow the existing ResNet, Imagenette, class-count sweep and CIFAR shift notebooks; they do not replace those experiments. Output paths depend on dataset/model/seed/experiment/mode rather than notebook number, so existing artifacts remain reusable. Tests verify exact metric-function parity, all six schemas, label adapters, preprocessing, disjoint splits with class imbalance, streamed neighbor signals, and six complete synthetic smoke pipelines. Synthetic fixtures use a tiny backbone and do not establish benchmark accuracy. A real MNIST CUDA smoke run additionally checks the actual loader and ConvNeXt path; full dataset downloads and full training still require lead validation.
