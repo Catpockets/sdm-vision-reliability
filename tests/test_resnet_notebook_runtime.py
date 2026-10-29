@@ -22,16 +22,25 @@ def functions(filename):
             continue
         nodes = [n for n in ast.parse(''.join(cell['source'])).body
                  if isinstance(n, ast.FunctionDef) and n.name in
-                 {'wilson_interval', 'selective_curve', 'choose_threshold', 'region_blockers'}]
+                 {'wilson_interval', 'selective_curve', 'choose_threshold', 'region_blockers', 'region_ladder'}]
         exec(compile(ast.Module(body=nodes, type_ignores=[]), filename, 'exec'), namespace)
     return notebook, namespace
 
 
 class ResNetRuntimeTest(unittest.TestCase):
-    def test_sdm_setup_uses_shared_requirements(self):
+    def test_sdm_setup_does_not_override_shared_numpy_requirements(self):
+        from importlib.metadata import version
+        from packaging.requirements import Requirement
         notebook, _ = functions('03_sdm_resnet18.ipynb')
-        install = [c for c in notebook['cells'] if '%pip install' in ''.join(c['source'])]
-        self.assertEqual(''.join(install[0]['source']).strip(), '%pip install -r ../requirements.txt')
+        requirements = [Requirement(line) for line in (ROOT / 'requirements.txt').read_text().splitlines() if line and not line.startswith('#')]
+        numpy_requirement = next(r for r in requirements if r.name == 'numpy')
+        self.assertTrue(numpy_requirement.specifier.contains(version('numpy')))
+        self.assertFalse(numpy_requirement.specifier.contains('1.26.4'))
+        # The teammate revision removed the installation cell; absence is valid.
+        for cell in notebook['cells']:
+            source = ''.join(cell['source'])
+            if '%pip install' in source:
+                self.assertNotIn('numpy==1.26', source)
 
     def test_thresholds_cannot_split_equal_confidence_groups(self):
         for filename in ['02_cifar100_cnn_resnet18.ipynb', '03_sdm_resnet18.ipynb']:

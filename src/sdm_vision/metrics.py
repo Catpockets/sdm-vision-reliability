@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score
 
+EVALUATION_VERSION = "whole-score-groups-calibration-match-1"
+
 
 def wilson_interval(successes, n, z=1.96):
     # 95% confidence interval for a proportion; works on numbers or arrays.
@@ -26,12 +28,17 @@ def expected_calibration_error(confidence, correct, n_bins=15):
 def choose_threshold(confidence, correct, target, conservative=False):
     # The lowest confidence at which the answered images are at least `target` correct (plain),
     # or the lower end of their 95% Wilson interval is (conservative); None if no threshold reaches it.
-    order = np.argsort(-confidence)
-    answered = np.arange(1, len(order) + 1)
-    hits = np.cumsum(correct[order])
+    confidence, correct = np.asarray(confidence), np.asarray(correct, dtype=bool)
+    if not len(confidence):
+        return None
+    order = np.argsort(-confidence, kind="stable")
+    sorted_scores = confidence[order]
+    ends = np.r_[np.flatnonzero(sorted_scores[:-1] != sorted_scores[1:]), len(order) - 1]
+    answered = ends + 1
+    hits = np.cumsum(correct[order])[ends]
     score = wilson_interval(hits, answered)[0] if conservative else hits / answered
     meets = np.flatnonzero(score >= target)
-    return None if len(meets) == 0 else float(confidence[order][meets.max()])
+    return None if len(meets) == 0 else float(sorted_scores[ends[meets[-1]]])
 
 
 def admitted(confidence, threshold):
@@ -39,21 +46,43 @@ def admitted(confidence, threshold):
 
 
 def coverage_accuracy_curve(score, correct):
-    # Coverage and accuracy when answering the k highest-scoring images, for every k.
+    # Only whole equal-score groups are attainable by a confidence threshold.
+    score, correct = np.asarray(score), np.asarray(correct, dtype=bool)
+    if not len(score):
+        return np.array([]), np.array([])
     order = np.argsort(-score, kind="stable")
-    answered = np.arange(1, len(order) + 1)
-    return answered / len(order), np.cumsum(correct[order]) / answered
+    sorted_scores = score[order]
+    ends = np.r_[np.flatnonzero(sorted_scores[:-1] != sorted_scores[1:]), len(order) - 1]
+    answered = ends + 1
+    return answered / len(order), np.cumsum(correct[order])[ends] / answered
+
+
+def threshold_for_coverage(confidence, coverage):
+    """Largest whole-group calibration coverage no greater than the budget."""
+    if not 0 <= coverage <= 1:
+        raise ValueError("Coverage must lie in [0, 1]")
+    scores = np.sort(np.asarray(confidence))[::-1]
+    if not len(scores):
+        return None
+    ends = np.r_[np.flatnonzero(scores[:-1] != scores[1:]), len(scores) - 1]
+    eligible = ends[(ends + 1) / len(scores) <= coverage]
+    return float(scores[eligible[-1]]) if len(eligible) else None
 
 
 def aurc(score, correct):
-    # Area under the risk-coverage curve: the average error rate over all coverage levels (lower is better).
-    return float(np.mean(1 - coverage_accuracy_curve(score, correct)[1]))
+    # Right-endpoint step integral, weighted by the size of each confidence group.
+    coverage, accuracy = coverage_accuracy_curve(score, correct)
+    return float(np.sum(np.diff(np.r_[0., coverage]) * (1 - accuracy))) if len(coverage) else float("nan")
 
 
 def e_aurc(score, correct):
     # AURC minus the AURC of a perfect ranking with the same errors, so it is comparable across accuracy levels.
     correct = np.asarray(correct)
-    return aurc(score, correct) - aurc(correct.astype(float), correct)
+    if not len(correct):
+        return float("nan")
+    # The oracle can rank every correct image before every error without ties.
+    oracle_risk = 1 - np.cumsum(np.sort(correct)[::-1]) / np.arange(1, len(correct) + 1)
+    return aurc(score, correct) - float(oracle_risk.mean())
 
 
 def auroc(score, positive):

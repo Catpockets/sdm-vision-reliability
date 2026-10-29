@@ -4,6 +4,15 @@ import numpy as np
 from reexpress_sdm import SDMModel, TorchTrainer, TrainingConfig
 
 
+def validate_calibration_identity(artifact, ids, labels, class_names):
+    """Reject cached fits made with different gate/selection populations."""
+    expected = dict(zip(ids, map(int, labels)))
+    observed = {row['id']: int(row['label']) for row in (artifact.calibration_rows or ())}
+    if (len(labels) != len(ids) or len(expected) != len(ids) or len(observed) != len(artifact.calibration_rows or ())
+            or observed != expected or artifact.manifest['configuration']['classNames'] != list(class_names)):
+        raise ValueError("Cached SDM calibration population/class mapping changed; preserve the artifact and use a separate output directory for a new fit.")
+
+
 def fit_sdm(train_embeddings, train_labels, calibration_embeddings, calibration_labels, class_names, device, fingerprint,
             epochs=20, seed=0):
     # Calling the trainer directly keeps our splits; the command-line tool would pool and reshuffle them.
