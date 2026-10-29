@@ -229,8 +229,9 @@ notebook integration), [#33](https://github.com/Catpockets/sdm-vision-reliabilit
 [#34](https://github.com/Catpockets/sdm-vision-reliability/pull/34) (verified clean
 analysis, failure figures and presentation). Their current descriptions record
 candidate hashes and checks. Ready for review is not independent approval,
-merge, completed research or closure of #6. The Allen Schmaltz meeting remains
-unconfirmed in #6. No speaking roles or further experiment runs are assigned
+merge, completed research or closure of #6. Karim confirmed on October 29 that the team received feedback from Allen
+Schmaltz. Specific takeaways, meeting format and resulting changes remain
+undocumented; no endorsement or validation outcome is inferred. No speaking roles or further experiment runs are assigned
 by this analysis plan.
 
 ### Current claims and evidence boundaries — October 29

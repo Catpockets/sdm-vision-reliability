@@ -451,8 +451,11 @@ choices before adding new experiments:
    budget, and what evidence would distinguish expected conservatism from a
    configuration problem?
 
-These are discussion questions based on completed clean outputs, not claims that
-a meeting occurred or authorization to change the running campaign.
+Karim confirmed on October 29 that the team received feedback from Allen
+Schmaltz. The specific recommendations and changes made in response remain to
+be recorded. The questions above are follow-up topics based on completed clean
+outputs; they do not establish what Allen said or authorize changes to the
+paused campaign.
 
 ## 6. Remaining results and final conclusion
 
