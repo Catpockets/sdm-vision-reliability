@@ -242,8 +242,9 @@ zero and two admitted errors respectively. Fashion-MNIST has no qualifying regio
 in either track despite 95.02% full-coverage accuracy. These observations do not
 support a universal claim that SDM forms a useful 95% region for vision tasks.
 They also do not establish an advantage over global softmax/temperature admission
-rules on those tasks; that paired frozen-rule comparison remains pending
-matched evaluation. Section 3.4 supplies the separate EMNIST comparison.
+rules by themselves. Section 3.5 supplies the saved-output global-policy
+comparison for all five completed ConvNeXt tasks; ResNet learned-SDM and
+shifted-population comparisons remain unfinished.
 
 ### 3.4 EMNIST: improved ranking remains separate from useful admission
 
@@ -307,6 +308,97 @@ support does not guarantee higher held-out accepted accuracy under this empirica
 selection rule. These results do not show a causal effect of calibration-set size
 or establish a shift guarantee; they are a single-checkpoint, single-seed comparison.
 
+### 3.5 Frozen global rules on all completed ConvNeXt tasks
+
+A separate [saved-output analysis packet](assets/clean-analysis-2026-10-29/evidence.json)
+extends the EMNIST comparison to all five completed ConvNeXt classifiers. Every
+row uses its own checkpoint and official test population. Calibration selects the
+largest whole-score-group coverage at empirical accuracy >=95%, with at least
+100 calibration admissions. Temperatures are the saved fits, not retuned on test.
+This is a retrospective analysis after historical test exploration; it does not
+supply evidence about corruption, OOD or unrun training seeds.
+
+**Table 6. Calibration-selected temperature rules across completed tasks.**
+Coverage and accepted accuracy are percentages. Exact counts, Wilson intervals,
+raw-softmax/SDM policies and confidently-wrong rates accompany all 30 policy rows
+in the packet. Calibration support is per class.
+
+| Dataset | Coverage, 25/class % | Accepted accuracy, 25/class % | Coverage, 100/class % | Accepted accuracy, 100/class % |
+| --- | ---: | ---: | ---: | ---: |
+| CIFAR-100 | 85.09 | 95.06 | 84.88 | 95.11 |
+| MNIST | 99.81 | 99.70 | 99.97 | 99.66 |
+| Fashion-MNIST | 99.60 | 95.24 | 98.05 | 96.03 |
+| KMNIST | 99.48 | 98.73 | 99.85 | 98.57 |
+| EMNIST Balanced | 84.63 | 96.17 | 89.81 | 94.56 |
+
+These conditional accuracies must be read with coverage. The MNIST and KMNIST
+classifiers already exceed the target at full coverage, whereas CIFAR-100 requires
+substantial abstention. EMNIST's enlarged-calibration rules miss the held-out
+accuracy target despite reaching it on calibration. The dataset rows are separate
+experiments; their numerical differences do not isolate architecture or task
+complexity effects. SDM uses a different class-conditional policy and has the
+admissions in Table 3; a global threshold's usable coverage is not proof of a
+statistical guarantee equivalent to SDM's intended criterion.
+
+### 3.6 Directed confusions and reproducible error examples
+
+The packet checks every test ID, target, predicted label and correctness flag
+against the saved output arrays. Confusion matrices sum to the full test
+population and their traces equal the recorded correct counts. Directed pairs
+are selected by largest error count, breaking ties by class IDs. Each gallery
+selects the three largest saved standard-track temperature confidences among
+errors, breaking ties by test ID. These choices are descriptive after test
+exploration; selected cases do not estimate an overall error frequency.
+
+**Table 7. Most frequent directed confusion in each completed task.** Counts
+have different class supports and cannot be compared as normalized error rates
+across datasets. The packet includes all class supports and recalls.
+
+| Dataset | True class | Predicted class | Error count |
+| --- | --- | --- | ---: |
+| CIFAR-100 | maple_tree | oak_tree | 16 |
+| MNIST | 4 - four | 9 - nine | 4 |
+| Fashion-MNIST | T-shirt/top | Shirt | 62 |
+| KMNIST | na | o | 23 |
+| EMNIST Balanced | F | f | 137 |
+
+The confusions suggest classes to inspect, not a causal explanation for SDM
+region failure or proof of incorrect labels. In particular, upper/lower-case
+handwriting and tree categories can look similar at the displayed resolution,
+but this analysis does not adjudicate annotation validity.
+
+Full confusion matrices are provided as integer counts and row-normalized
+heatmaps. Row labels are true classes and column labels are predictions; class
+supports remain available so counts can be normalized appropriately.
+
+| Dataset | Counts | Heatmap |
+| --- | --- | --- |
+| CIFAR-100 | [CSV](assets/clean-analysis-2026-10-29/cifar100-confusion.csv) | [PNG](assets/clean-analysis-2026-10-29/cifar100-confusion-matrix.png) |
+| MNIST | [CSV](assets/clean-analysis-2026-10-29/mnist-confusion.csv) | [PNG](assets/clean-analysis-2026-10-29/mnist-confusion-matrix.png) |
+| Fashion-MNIST | [CSV](assets/clean-analysis-2026-10-29/fashion_mnist-confusion.csv) | [PNG](assets/clean-analysis-2026-10-29/fashion_mnist-confusion-matrix.png) |
+| KMNIST | [CSV](assets/clean-analysis-2026-10-29/kmnist-confusion.csv) | [PNG](assets/clean-analysis-2026-10-29/kmnist-confusion-matrix.png) |
+| EMNIST Balanced | [CSV](assets/clean-analysis-2026-10-29/emnist_balanced-confusion.csv) | [PNG](assets/clean-analysis-2026-10-29/emnist_balanced-confusion-matrix.png) |
+
+![CIFAR-100 high-confidence error examples](assets/clean-analysis-2026-10-29/cifar100-errors.png)
+
+**Figure 2.** Three selected CIFAR-100 errors. Labels, confidence values and test
+IDs come from the same saved checkpoint/population as Table 6. The public dataset
+images are illustrative excerpts, not a new independent evaluation.
+
+![EMNIST high-confidence error examples](assets/clean-analysis-2026-10-29/emnist_balanced-errors.png)
+
+**Figure 3.** Three selected EMNIST errors, displayed upright using the experiment's
+transpose. Selection follows the confidence/ID rule above.
+
+The complete figure packet provides [CIFAR-100 confusions](assets/clean-analysis-2026-10-29/cifar100-confusions.png),
+[MNIST confusions](assets/clean-analysis-2026-10-29/mnist-confusions.png) and
+[examples](assets/clean-analysis-2026-10-29/mnist-errors.png),
+[Fashion-MNIST confusions](assets/clean-analysis-2026-10-29/fashion_mnist-confusions.png)
+and [examples](assets/clean-analysis-2026-10-29/fashion_mnist-errors.png),
+[KMNIST confusions](assets/clean-analysis-2026-10-29/kmnist-confusions.png) and
+[examples](assets/clean-analysis-2026-10-29/kmnist-errors.png), and
+[EMNIST confusions](assets/clean-analysis-2026-10-29/emnist_balanced-confusions.png).
+
 ## 4. Failure analysis and limitations
 
 Three distinct behaviors must remain separate: the model's label accuracy,
@@ -368,7 +460,7 @@ CIFAR-10 and in-distribution SVHN results remain incomplete. EMNIST is now
 verified and included; the paused campaign must not be resumed as part of a
 write-up-only update. Full corruption/OOD runs must supply frozen-rule reliability,
 coverage, confidently wrong rates and separate far-OOD admissions. The remaining
-T1–T5/F1–F5 displays and results gate are specified in the
+corruption/OOD displays and final results gate are specified in the
 [analysis plan](experiment-design.md#results-tables-and-figure-plan).
 
 The current evidence supports a narrow conclusion: temperature scaling lowers ECE
@@ -428,3 +520,25 @@ It does not fit a model, score embeddings, restart a supervisor or edit campaign
 status. Full SDM probability reconstruction and teammate-run artifact reconciliation
 remain outside this verification. The dated JSON and figure are aggregate evidence;
 raw images, per-image predictions and checkpoints remain outside Git.
+
+Reproduce the five-task offline analysis and error figures from prepared local
+caches (downloads are disabled):
+
+```bash
+python scripts/analyze_saved_clean_results.py --campaign /path/to/campaign \
+  --cache /path/to/prepared-cache --output /path/to/clean-analysis
+```
+
+The [research progress presentation](../presentations/sdm-research-progress.pptx)
+uses these verified clean findings, keeps ResNet and ConvNeXt populations separate,
+and identifies unfinished shift/OOD work. Sources and scope limitations accompany
+its speaker notes. It is a progress deck, not a claim that all course deliverables
+or experiments are complete.
+
+The deck source is `scripts/build_research_progress.mjs`. Rebuild with the bundled
+Node/Artifact Tool runtime, setting `ARTIFACT_TOOL_MODULE`,
+`PRESENTATIONS_SKILL_DIR` and `RUNTIME_PYTHON` to the installed runtime locations.
+It accepts a private build directory and a new PPTX output path as arguments,
+renders all slides and runs the presentation finalizer. The native ECE chart uses
+two-decimal percentage values for portable editable chart workbooks; full-precision
+values remain in the evidence JSON and the slide source notes identify its hash.

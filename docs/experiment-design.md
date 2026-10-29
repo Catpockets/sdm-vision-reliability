@@ -116,7 +116,7 @@ For SVHN far-OOD, report false-admission rate (lower is better), rejection rate
 (1 minus false-admission), and ID-versus-OOD AUROC (ID is positive; higher is
 better). State whether the ID reference is ResNet validation or ConvNeXt official
 test. Digit labels are audit-only; CIFAR classification accuracy/NLL is undefined
-on SVHN OOD. In-distribution SVHN notebook 10 is a separate classification task.
+on SVHN OOD. The in-distribution SVHN classifier in PR #29 is a separate classification task.
 
 Finally compare ConvNeXt's calibration budgets and six dataset results without
 selecting datasets by final-test accuracy. Separate probability calibration from
@@ -222,12 +222,45 @@ visible. Reconcile all tabulated values with their underlying masks/counts and
 regenerate plots from the verified exports. Audit captions and abstract claims
 against the resulting evidence before submission.
 
-Randell's code-review order is PR #27 and PR #30, then PR #29 (depends on #27) and
-PR #23 (depends on #27/#30). The PR descriptions are the authoritative review
-checklists and validation records. Ready for review is not independent approval,
+The original prerequisite PRs #23/#27/#30 have merged. Current review candidates
+are [#29](https://github.com/Catpockets/sdm-vision-reliability/pull/29) (six-dataset
+notebook integration), [#33](https://github.com/Catpockets/sdm-vision-reliability/pull/33)
+(legacy reliability evaluation repairs), and
+[#34](https://github.com/Catpockets/sdm-vision-reliability/pull/34) (verified clean
+analysis, failure figures and presentation). Their current descriptions record
+candidate hashes and checks. Ready for review is not independent approval,
 merge, completed research or closure of #6. The Allen Schmaltz meeting remains
-unconfirmed in #6. No author, speaking role, deadline or team decision is assigned
-by this outline.
+unconfirmed in #6. No speaking roles or further experiment runs are assigned
+by this analysis plan.
+
+### Current claims and evidence boundaries — October 29
+
+| Question | Available evidence | Remaining limit |
+| --- | --- | --- |
+| Does temperature improve clean probability calibration? | Five completed ConvNeXt official-test tasks, original/new dated snapshots | One seed; no shifted-population conclusion |
+| Are frozen global rules useful on those tasks? | Thirty saved-output policy rows with counts, coverage, intervals and confidently-wrong rates | Empirical calibration target can miss on held-out data; post-exploration analysis |
+| Do SDM regions always form? | Both CIFAR-100, Fashion-MNIST and EMNIST tracks admit zero; MNIST/KMNIST admit nonempty subsets | No universal region-formation or shift guarantee |
+| Which errors should be inspected? | Deterministic directed confusions, per-class recall and 15 ID-checked examples | Descriptive selection; no inferred label noise or cause |
+| Do teammate Imagenette/selected-class/class-count results survive the audit? | Source defects reproduced and repaired in #33 | Matching saved artifacts absent from searched local caches, GitHub releases/Actions and the relevant Drive search |
+| Does reliability persist under corruption or far-OOD? | Evaluator and bounded pipeline checks only | Full matched 75-condition and SVHN runs remain paused/uncompleted |
+
+### Artifact requirements for offline teammate reconciliation
+
+Do not restart a training job just to fill a missing artifact cell. The following
+must be retrieved from the original run owner or existing storage before numerical
+claims from those runs enter the manuscript:
+
+| Experiment | Required saved artifacts | Check before recomputation |
+| --- | --- | --- |
+| Imagenette 128/32 pixels | Original `.pt` checkpoint, matching `_embeddings.npz` (calibration/validation logits, labels, embeddings), fitted `sdm10` artifact | Checkpoint hash, split IDs, class order, input resolution, preprocessing, seeds and matching SDM representation fingerprint |
+| CIFAR selected classes / gate | Original `cifar100_resnet18_cal100` checkpoint/arrays, actual selected/gated class list and membership, fitted SDM artifact | Calibration IDs/labels/class map, gate settings, disjoint evaluation population; never reuse a cache on backbone identity alone |
+| Class-count sweep | Each dataset/chain/K `scores.npz` and `metrics.json`, class order and original splits | Recompute tied-score metrics from saved per-image scores; old evaluation versions are not compatible |
+| Class-count calibration matching | Saved calibration SDM region assignments, or the fitted adaptor plus original calibration representations | Old sweep arrays lacked calibration SDM scores; calibration logits alone cannot recreate the corrected matched rule |
+
+Each accepted contribution must identify source and checkpoint revisions, expose
+failed/no-region outcomes, and distinguish a source repair from a revalidated
+result. The current search does not establish that these artifacts do not exist
+elsewhere; it establishes that they were unavailable for this local analysis.
 
 See [matched evaluation and collection commands](matched-shift-evaluation.md).
 
