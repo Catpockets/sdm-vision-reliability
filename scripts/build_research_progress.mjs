@@ -17,7 +17,8 @@ const evidenceBytes = await fs.readFile(evidencePath);
 const evidence = JSON.parse(evidenceBytes);
 const sourceHash = createHash('sha256').update(evidenceBytes).digest('hex');
 const FONT = 'Arial', BLUE='#002676', GOLD='#FDB515', GRAY='#595959';
-const presentation2 = process.argv.includes('--presentation2');
+const karimSection = process.argv.includes('--karim-section');
+const presentation2 = process.argv.includes('--presentation2') || karimSection;
 const p = Presentation.create({slideSize:{width:1280,height:720}});
 const pct = x => x == null ? 'Undefined' : (x*100).toFixed(2)+'%';
 const policy = (g,method,track) => g.policies.find(r=>r.method===method && r.track===track);
@@ -139,8 +140,8 @@ if (presentation2) {
  ['Similarity','Distance','Magnitude'].forEach((v,i)=>text(method,v,70+390*i,190,335,65,31,BLUE,true));
  ['Agreement with nearby training examples in representation space','Proximity to the training distribution','Decision-boundary information from the model’s logits'].forEach((v,i)=>text(method,v,70+390*i,280,335,180,30,GRAY));
  text(method,'Calibration constructs a selective region. A region can be empty when its empirical conditions cannot be met.',70,535,1110,100,30,BLUE);
- const plan=slide('Remaining work and proposed owners','');
- table(plan,[['Workstream','Proposed owner','Next deliverable'],['SDM and protocol','Yiwen','Freeze choices and explain region diagnostics'],['Dataset comparisons','Randell','Reconcile run artifacts and coverage results'],['Baselines and paper','Karim','Integrate comparisons, figures and limitations']],190,320,[290,220,630]);
+ const plan=slide(karimSection?'Baselines and paper: remaining work':'Remaining work and proposed owners','');
+ table(plan,karimSection?[['Workstream','Owner','Next deliverable'],['Evidence','Karim','Reconcile source artifacts and exact counts'],['Baselines','Karim','Freeze comparison populations and policies'],['Paper','Karim','Integrate figures, limitations and expert notes']]:[['Workstream','Proposed owner','Next deliverable'],['SDM and protocol','Yiwen','Freeze choices and explain region diagnostics'],['Dataset comparisons','Randell','Reconcile run artifacts and coverage results'],['Baselines and paper','Karim','Integrate comparisons, figures and limitations']],190,320,[290,220,630]);
  text(plan,'Priority: matched CIFAR corruption/OOD evaluation, then unfinished dataset checks. Full runs remain paused.',70,550,1110,95,27,GRAY);
  const mission=slide('Our mission','');
  text(mission,'Give vision practitioners reproducible evidence for when a classifier should answer, abstain, or defer to human review.',90,230,1080,240,46,BLUE);
@@ -166,6 +167,12 @@ if (presentation2) {
  ['Karim','0:30','Our mission is to give vision practitioners reproducible evidence for when a classifier should answer, abstain or defer to review. Useful coverage and reliable accepted predictions must occur together. Our completed clean experiments show mixed SDM transfer behavior, including empty regions, and a clear role for calibrated baselines. The final paper will report those findings and the remaining evaluation honestly. Invite questions without adding a thank-you slide.']
  ];
  selected.forEach((s,i)=>s.speakerNotes.text=`Suggested speaker: ${talk[i][0]}. Rehearsal target: ${talk[i][1]}.\n\n${talk[i][2]}\n\nSources: docs/assets/clean-analysis-2026-10-29/evidence.json (SHA256 ${sourceHash}); docs/research-writeup.md; docs/experiment-design.md. Presentation 2 guidance supplied by the team, pages 1–5. Speaking assignments and timings are suggestions based on the chat, not confirmed team decisions.`);
+ if (karimSection) {
+  p.slides.keep([2,5,8,9,10,11,12]);
+  p.slides.items.forEach(s=>s.speakerNotes.text=s.speakerNotes.text.replace(/Suggested speaker: [^.]+\./,'Suggested speaker: Karim.'));
+  p.slides.items[0].speakerNotes.text=p.slides.items[0].speakerNotes.text.replace('Rehearsal target: 2:45.','Rehearsal target: 0:55.');
+  p.slides.items[5].speakerNotes.text='Suggested speaker: Karim. Rehearsal target: 0:30.\n\nMy remaining work is to reconcile source artifacts and exact counts, freeze baseline comparison populations and policies, and integrate the figures, limitations and Allen feedback notes into the paper. The matched corruption/OOD evaluation remains future work. Full experiments remain paused. Other team members retain their existing work and speaking sections.';
+ }
 }
 for (let i=0;i<p.slides.items.length;i++) {
  const blob=await p.export({slide:p.slides.items[i],format:'png',scale:1});
@@ -176,9 +183,9 @@ await finalizePresentation({workspaceDir:ROOT,candidatePath:candidate,finalPath:
  pythonExecutable:process.env.RUNTIME_PYTHON,
  integrityValidatorPath:path.join(SKILL,'container_tools/inspect_presentation_package_integrity.py'),
  layoutValidatorPath:path.join(SKILL,'container_tools/inspect_presentation_layout_geometry.py'),
- explicitTotalSlideCount:presentation2?13:12,requiredNativeTableOwnerSlides:presentation2?[7,9,12]:[4,7,8],requiredNativeChartOwnerSlides:[presentation2?6:5],
+ explicitTotalSlideCount:karimSection?7:presentation2?13:12,requiredNativeTableOwnerSlides:karimSection?[3,6]:presentation2?[7,9,12]:[4,7,8],requiredNativeChartOwnerSlides:[karimSection?2:presentation2?6:5],
  materializeLiteralChartWorkbooks:true,
- layoutArgs:['--expected-slide-size-emu','12192000,6858000','--validate-heading-fit',...((presentation2?[7,9,12]:[4,7,8]).flatMap(n=>['--require-native-table-slide',String(n)]))],
+ layoutArgs:['--expected-slide-size-emu','12192000,6858000','--validate-heading-fit',...((karimSection?[3,6]:presentation2?[7,9,12]:[4,7,8]).flatMap(n=>['--require-native-table-slide',String(n)]))],
  fontPolicy:{basis:'design',families:[FONT]},verifyArtifactToolImport:true,
  receiptPath:path.join(build,'validation.json')});
 console.log('Validated deck:',final);
