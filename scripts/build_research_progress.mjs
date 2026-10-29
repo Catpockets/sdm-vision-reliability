@@ -81,7 +81,7 @@ async function picture(s,relative,x,y,w,h){
            {name:'Temperature, 25/class',values:evidence.groups.map(g=>Number((100*g.native_metrics.find(r=>r.method==='temperature_standard_25').ece_15).toFixed(2))),fill:GOLD}],
    hasLegend:true,dataLabels:{showValue:true,position:'outEnd',numberFormatCode:'0.00',textStyle:{fontSize:20}},xAxis:{textStyle:{fontSize:20}},yAxis:{numberFormatCode:'0.0',textStyle:{fontSize:18},majorGridlines:{fill:'#EEEEEE',width:1}}});
  applyPresentationChartFont(chart,{fontFamily:FONT});
- text(s,'15-bin ECE (%) · same checkpoint and class predictions within each task',70,610,1120,40,23,GRAY);
+ text(s,'ConvNeXt-Tiny · clean official tests · seed 42 · 15-bin ECE (%)',70,610,1120,40,23,GRAY);
 }
 {
  const s=slide('EMNIST ranking improves while both SDM regions stay empty','EMNIST has 47 classes and 18,800 test examples. SDM-100 has lower AURC than raw softmax, but its probability calibration is worse and no qualifying region forms. ECE values on this figure use rates, unlike the previous slide percentages. SDM probability metrics are reconciled native exports; ranking and admissions were independently recomputed from per-image saved scores. Suggested time: 80 seconds.');
@@ -90,7 +90,7 @@ async function picture(s,relative,x,y,w,h){
 {
  const s=slide('A 95% calibration target can miss on held-out data','The table reports calibration-selected global temperature rules, not retrospective threshold tuning on test labels. The minimum admitted calibration count is 100. Larger calibration support does not guarantee higher test accepted accuracy under this empirical selection procedure. EMNIST-100 misses the target while admitting more test images. The comparison is retrospective and single-seed; it is not evidence that more calibration data causes worse performance. Suggested time: 80 seconds.');
  table(s,[['Dataset','Coverage\n25/class','Accuracy\n25/class','Coverage\n100/class','Accuracy\n100/class'],...evidence.groups.map(g=>{const a=policy(g,'temperature','standard_25'),b=policy(g,'temperature','enlarged_100');return [g.title,pct(a.coverage),pct(a.accepted_accuracy),pct(b.coverage),pct(b.accepted_accuracy)];})],180,390,[290,210,210,215,215]);
- text(s,'Temperature-scaled softmax rules; exact counts and Wilson intervals are in the write-up.',70,603,1120,48,23,GRAY);
+ text(s,'ConvNeXt official tests · accuracy among accepted predictions · calibration-only thresholds',70,603,1120,48,23,GRAY);
 }
 {
  const g=evidence.groups.find(g=>g.dataset==='emnist_balanced');
@@ -142,7 +142,7 @@ if (presentation2) {
  text(method,'Calibration constructs a selective region. A region can be empty when its empirical conditions cannot be met.',70,535,1110,100,30,BLUE);
  const plan=slide(karimSection?'Baselines and paper: remaining work':'Remaining work and proposed owners','');
  table(plan,karimSection?[['Workstream','Owner','Next deliverable'],['Evidence','Karim','Reconcile source artifacts and exact counts'],['Baselines','Karim','Freeze comparison populations and policies'],['Paper','Karim','Integrate figures, limitations and expert notes']]:[['Workstream','Proposed owner','Next deliverable'],['SDM and protocol','Yiwen','Freeze choices and explain region diagnostics'],['Dataset comparisons','Randell','Reconcile run artifacts and coverage results'],['Baselines and paper','Karim','Integrate comparisons, figures and limitations']],190,320,[290,220,630]);
- text(plan,'Priority: matched CIFAR corruption/OOD evaluation, then unfinished dataset checks. Full runs remain paused.',70,550,1110,95,27,GRAY);
+ text(plan,'Next: matched corruption/OOD evaluation. Heavy experiments remain paused.',70,550,1110,95,27,GRAY);
  const mission=slide('Our mission','');
  text(mission,'Give vision practitioners reproducible evidence for when a classifier should answer, abstain, or defer to human review.',90,230,1080,240,46,BLUE);
  text(mission,'Reliable accepted predictions at useful coverage',90,555,1080,65,30,GRAY);
@@ -170,7 +170,7 @@ if (presentation2) {
  if (karimSection) {
   p.slides.keep([2,5,8,9,10,11,12]);
   p.slides.items.forEach(s=>s.speakerNotes.text=s.speakerNotes.text.replace(/Suggested speaker: [^.]+\./,'Suggested speaker: Karim.'));
-  p.slides.items[0].speakerNotes.text=p.slides.items[0].speakerNotes.text.replace('Rehearsal target: 2:45.','Rehearsal target: 0:55.');
+  p.slides.items[0].speakerNotes.text="Suggested speaker: Karim. Rehearsal target: 0:55.\n\nOur deliverable is a reproducible benchmark and research paper for vision practitioners deciding which predictions to accept or send for review. We ask what coverage is attainable at a target accepted accuracy, and when SDM adds value beyond calibrated softmax. We compare policies on the same checkpoint and evaluation images within each task, and report negative results alongside positive ones. Calibration quality, error ranking and useful admission coverage can disagree. Today\u2019s conclusions cover completed clean tasks; matched corruption and OOD evaluation remains unfinished.\n\nAllen Schmaltz feedback: [TEAM: add his key advice and the changes made in response. Feedback was confirmed by Karim; do not infer endorsement.]\n\nSources: docs/research-writeup.md; docs/experiment-design.md; docs/assets/clean-analysis-2026-10-29/evidence.json.";
   p.slides.items[5].speakerNotes.text='Suggested speaker: Karim. Rehearsal target: 0:30.\n\nMy remaining work is to reconcile source artifacts and exact counts, freeze baseline comparison populations and policies, and integrate the figures, limitations and Allen feedback notes into the paper. The matched corruption/OOD evaluation remains future work. Full experiments remain paused. Other team members retain their existing work and speaking sections.';
  }
 }
