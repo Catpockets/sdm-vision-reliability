@@ -60,7 +60,8 @@ test images against the development population of both classifiers.
 
 Use `python scripts/benchmark_subset_cascade.py --help` to reproduce the latency measurement
 from the same checkpoints and routing audit. Timings cover preprocessing, synchronized inference,
-routing and fallback from decoded in-memory images through CPU predictions.
+routing and fallback from decoded in-memory images through CPU predictions. Set batch sizes to
+measure the crossover and use `--compare-sdm-cache` to time the cached reference calculations.
 
 ## Research Question
 

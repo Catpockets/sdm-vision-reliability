@@ -45,7 +45,27 @@ def load_fallback(path, expected_hash, device):
     return model.eval().to(device)
 
 
-def prepare_routes(folder, draw, budget, track, receipt, fallback, device):
+def cached_sdm_signals(functions):
+    """Keep the support and query normalization on device and transfer only the needed distances."""
+    support = functions["reference_embeddings"]
+    squared_norm = support.square().sum(dim=1)
+    mean = functions["embedding_mean"].to(support.device)
+    std = functions["embedding_std"].to(support.device)
+    neighbors = functions["neighbors"]
+    count_matches = functions["consecutive_correct_match_count"]
+
+    def signals(embeddings, predictions):
+        query = (embeddings - mean) / std
+        squared_l2 = (
+            query.square().sum(dim=1, keepdim=True) + squared_norm.unsqueeze(0) - 2 * query @ support.T
+        ).clamp_min_(0)
+        distances, indices = torch.topk(squared_l2, k=neighbors, dim=1, largest=False, sorted=True)
+        return distances[:, 0].cpu().numpy(), count_matches(indices.cpu().numpy(), predictions)
+
+    return signals
+
+
+def prepare_routes(folder, draw, budget, track, receipt, fallback, device, compare_cache=False):
     path = folder / "checkpoint.pt"
     verify_file(path, receipt["sha256"][f"draw-{draw}/checkpoint.pt"])
     checkpoint = torch.load(path, map_location="cpu", weights_only=True)
@@ -73,13 +93,14 @@ def prepare_routes(folder, draw, budget, track, receipt, fallback, device):
         region["thresholds"] = np.asarray(region["thresholds"], dtype=np.float32)
     functions["reference_embeddings"] = torch.as_tensor(functions["reference_embeddings"], device=device)
     cutoff = budget["tracks"][track]["methods"]["temperature"]["threshold"]
+    cached_signals = cached_sdm_signals(functions) if compare_cache and region["found"] else None
 
     def convnext(pixels):
         batch = torch.stack([transform(Image.fromarray(image)) for image in pixels]).to(device)
         return fallback(batch).index_select(1, class_ids).argmax(1)
 
     def route(pixels, method):
-        if method == "convnext" or (method == "temperature" and cutoff is None) or (method == "sdm" and not region["found"]):
+        if method == "convnext" or (method == "temperature" and cutoff is None) or (method in ("sdm", "sdm_cached") and not region["found"]):
             return class_ids[convnext(pixels)].cpu().numpy(), np.ones(len(pixels), dtype=bool)
         inputs = torch.from_numpy(pixels).permute(0, 3, 1, 2).to(device)
         embeddings = model.embed((inputs.float() / 255 - mean) / std)
@@ -89,8 +110,11 @@ def prepare_routes(folder, draw, budget, track, receipt, fallback, device):
             confidence = functions["temperature_probabilities"](logits, frozen["temperature"]).max(1)
             admitted = admission_mask(confidence, cutoff)
         else:
-            normalized = functions["normalize_embeddings"](embeddings.cpu().numpy())
-            distances, q = streamed_signals(functions, normalized, predictions)
+            if method == "sdm_cached":
+                distances, q = cached_signals(embeddings, predictions)
+            else:
+                normalized = functions["normalize_embeddings"](embeddings.cpu().numpy())
+                distances, q = streamed_signals(functions, normalized, predictions)
             probabilities, q_prime = sdm_values(functions, logits, distances, q, policy["cdfs"])
             admitted = functions["apply_high_reliability_region"](probabilities, q_prime, predictions, region)
         delegated = ~admitted
@@ -128,10 +152,11 @@ def benchmark(args):
     dataset = CIFAR100(args.data, train=False, download=False)
     targets = np.asarray(dataset.targets)
     records, samples = [], {}
+    methods = POLICIES + ("sdm_cached",) if args.compare_sdm_cache else POLICIES
 
     for draw in range(1, 6):
         budget = evidence["calibration_budgets"][str(draw)]
-        route = prepare_routes(args.subsets / f"draw-{draw}", draw, budget, args.track, receipt, fallback, device)
+        route = prepare_routes(args.subsets / f"draw-{draw}", draw, budget, args.track, receipt, fallback, device, args.compare_sdm_cache)
         with np.load(args.routing / f"draw-{draw}.npz") as replay:
             if args.samples > len(replay["dataset_indices"]):
                 raise ValueError("Sample count exceeds the eligible test cohort")
@@ -145,6 +170,8 @@ def benchmark(args):
                              "temperature": replay[f"{args.track}_temperature_frozen_budget_primary"][order]}
         expected_masks = {"convnext": np.ones(len(ids), dtype=bool),
                           **{method: ~mask for method, mask in primary_masks.items()}}
+        if args.compare_sdm_cache:
+            expected_masks["sdm_cached"] = expected_masks["sdm"]
         expected_labels = {method: np.where(mask, alternate, primary) for method, mask in expected_masks.items()}
         samples[draw] = ids.tolist()
         pixels = dataset.data[ids]
@@ -153,13 +180,13 @@ def benchmark(args):
             batches = [slice(start, start + size) for start in range(0, len(ids), size)]
             for i in range(args.warmup):
                 selection = batches[i % len(batches)]
-                for method in POLICIES:
+                for method in methods:
                     route(pixels[selection], method)
             synchronize(device)
             for repeat in range(args.repeats):
                 for request, selection in enumerate(batches):
-                    rotation = (draw + repeat + request) % len(POLICIES)
-                    for method in POLICIES[rotation:] + POLICIES[:rotation]:
+                    rotation = (draw + repeat + request) % len(methods)
+                    for method in methods[rotation:] + methods[:rotation]:
                         synchronize(device)
                         start = perf_counter_ns()
                         predictions, delegated = route(pixels[selection], method)
@@ -174,7 +201,7 @@ def benchmark(args):
 
     summaries = []
     for size in args.batch_sizes:
-        for method in POLICIES:
+        for method in methods:
             for draw in (0, 1, 2, 3, 4, 5):
                 group = [row for row in records if row["batch_size"] == size and row["policy"] == method
                          and (draw == 0 or row["draw"] == draw)]
@@ -204,6 +231,7 @@ def main():
     parser.add_argument("--warmup", type=int, default=6)
     parser.add_argument("--threads", type=int, default=6)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--compare-sdm-cache", action="store_true", help="Also time exact SDM with cached support norms.")
     args = parser.parse_args()
     if (min(args.samples, args.repeats, args.warmup, args.threads) < 1
             or any(size < 1 or args.samples % size for size in args.batch_sizes)
