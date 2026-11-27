@@ -23,6 +23,7 @@ The goal is to build models that can selectively abstain from uncertain predicti
 - [SDM on Imagenette, compared with CIFAR-100](notebooks/09_sdm_resnet18_imagenette.ipynb)
 - [Summary: Imagenette against CIFAR-100 (accuracy, calibration, coverage, SDM)](notebooks/10_summary_imagenette_vs_cifar100.ipynb)
 - [Number of classes: CIFAR-10 against Imagenette, K = 2 to 10, softmax against SDM](notebooks/11_class_count_sweep.ipynb) (results from `python experiments/class_sweep.py`)
+- [Random ten-class CIFAR-100 draws and aggregate precision plots](notebooks/cifar100_random_subset_summary.ipynb)
 - [Experiment design: from-scratch ResNet-18 as the primary model](docs/experiment-design.md)
 - [Initial project idea and requirements](docs/project-brief.md)
 - [Allen Schmaltz’s research overview and attached poster](docs/allen-schmaltz-sdm.md)
@@ -30,6 +31,24 @@ The goal is to build models that can selectively abstain from uncertain predicti
 - [Matched checkpoint shift evaluation, notebooks 11–13, and results collection](docs/matched-shift-evaluation.md)
 - [Upstream SDM research code](https://github.com/ReexpressAI/sdm_activations)
 - [Project issues and starter tasks](https://github.com/Catpockets/sdm-vision-reliability/issues)
+
+## Random ten-class CIFAR-100 draws
+
+Open experiment notebooks [1](notebooks/cifar100_random_subset_1.ipynb),
+[2](notebooks/cifar100_random_subset_2.ipynb), [3](notebooks/cifar100_random_subset_3.ipynb),
+[4](notebooks/cifar100_random_subset_4.ipynb), and [5](notebooks/cifar100_random_subset_5.ipynb),
+then open the aggregate notebook. With the training requirements installed, run a one-epoch
+smoke check against the prepared dataset with:
+
+```bash
+python experiments/cifar100_subsets.py --draw 1 --data-dir /path/to/cifar100
+```
+
+Add `--benchmark` for the fixed 40-epoch experiment and repeat for draws 1–5.
+Use `--out` to choose a fresh artifact root. Standard and enlarged calibration
+use 25 and 100 images per class, respectively. Predictions, split indices, frozen
+parameters and run status are saved outside version control. The benchmark reports
+exploratory evidence for the sampled classes. See [issue #35](https://github.com/Catpockets/sdm-vision-reliability/issues/35).
 
 ## Research Question
 
