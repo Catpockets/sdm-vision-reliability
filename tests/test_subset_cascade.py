@@ -1,13 +1,17 @@
 import hashlib
+import json
 from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from evaluate_subset_cascade import confidence_at_budget, indexes_for_ids, summarize, verify_file
+from evaluate_subset_cascade import (
+    admission_mask, confidence_at_budget, evaluate, indexes_for_ids, summarize, threshold_at_budget, verify_file,
+)
 
 
 class CascadeAuditTests(unittest.TestCase):
@@ -32,6 +36,29 @@ class CascadeAuditTests(unittest.TestCase):
         np.testing.assert_array_equal(confidence_at_budget(confidence, 2), [True, True])
         with self.assertRaises(ValueError):
             confidence_at_budget([0.2, np.nan], 1)
+
+    def test_frozen_calibration_cutoff_allows_held_out_budget_drift(self):
+        cutoff = threshold_at_budget([0.3, 0.5, 0.7, 0.9], 2)
+        self.assertEqual(cutoff, 0.7)
+        np.testing.assert_array_equal(admission_mask([0.6, 0.65, 0.8, 0.55], cutoff), [False, False, True, False])
+        self.assertIsNone(threshold_at_budget([0.3, 0.5], 0))
+
+    def test_calibration_finishes_before_opening_test_dataset(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            plan = {"mode": "benchmark", "draws": [{"seed": seed} for seed in range(5)]}
+            payload = json.dumps(plan).encode()
+            (root / "plan.json").write_bytes(payload)
+            (root / "verified-results.json").write_text(json.dumps({
+                "draws": plan["draws"], "sha256": {"plan.json": hashlib.sha256(payload).hexdigest()},
+            }))
+            with patch("torchvision.datasets.CIFAR100") as dataset, patch(
+                    "evaluate_subset_cascade.freeze_calibration_budgets", side_effect=ValueError("calibration blocked"),
+            ) as freeze:
+                with self.assertRaisesRegex(ValueError, "calibration blocked"):
+                    evaluate(root, root, root, root)
+                dataset.assert_called_once_with(root, train=True, download=False)
+                freeze.assert_called_once()
 
     def test_error_changes_reconcile_with_fallback_only(self):
         primary = np.array([0, 0, 1, 1])

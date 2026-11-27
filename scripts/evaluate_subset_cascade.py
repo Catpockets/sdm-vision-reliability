@@ -11,9 +11,9 @@ import sys
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "notebooks"))
+sys.path[:0] = [str(ROOT / "notebooks"), str(ROOT / "experiments")]
 
-from shift_metrics import fingerprint
+from shift_metrics import admission_mask, fingerprint, metric_functions
 
 TRACKS = ("standard", "enlarged")
 
@@ -35,17 +35,21 @@ def indexes_for_ids(source_ids, wanted_ids):
     return order[positions]
 
 
-def confidence_at_budget(confidence, target_count):
+def threshold_at_budget(confidence, target_count):
     """Closest attainable count, keeping ties whole and preferring fewer first-stage uses on ties."""
     confidence = np.asarray(confidence)
     if confidence.ndim != 1 or not np.isfinite(confidence).all() or not 0 <= target_count <= len(confidence):
         raise ValueError("Expected finite scores and an attainable count interval")
     ordered = np.sort(confidence)[::-1]
     if not len(ordered):
-        return np.zeros(0, dtype=bool)
+        return None
     counts = np.r_[0, np.flatnonzero(ordered[:-1] != ordered[1:]) + 1, len(ordered)]
     count = counts[np.argmin(np.abs(counts - target_count))]
-    return confidence >= ordered[count - 1] if count else np.zeros(len(ordered), dtype=bool)
+    return float(ordered[count - 1]) if count else None
+
+
+def confidence_at_budget(confidence, target_count):
+    return admission_mask(confidence, threshold_at_budget(confidence, target_count))
 
 
 def summarize(primary, fallback, labels, use_primary):
@@ -73,11 +77,77 @@ def verify_file(path, expected):
     return actual
 
 
-def evaluate(subsets, campaign, fallback_evidence, data_root):
+def freeze_calibration_budgets(subsets, provenance, plan, training, device_name):
+    """Recover calibration admissions and freeze confidence cutoffs without reading test rows."""
+    import torch
+    from cifar100_subsets import fit_policies, score_policies
+
+    device = torch.device(device_name)
+    training_targets = np.asarray(training.targets)
+    budgets = {}
+    for number, draw in enumerate(plan["draws"], 1):
+        folder = subsets / f"draw-{number}"
+        classes = np.asarray(draw["class_ids"])
+        hashes = {}
+        for name in ("training_splits.npz", "calibration.npz", "frozen_policies.json"):
+            path = folder / name
+            hashes[name] = verify_file(path, provenance["sha256"][str(path.relative_to(subsets))])
+        hashes["reference.npz"] = fingerprint(folder / "reference.npz")
+        original = json.loads((folder / "frozen_policies.json").read_text())
+
+        with np.load(folder / "training_splits.npz") as split, np.load(folder / "reference.npz") as reference, \
+             np.load(folder / "calibration.npz") as calibration:
+            if (not np.array_equal(reference["dataset_indices"], split["train"])
+                    or not np.array_equal(calibration["dataset_indices"], split["enlarged"])
+                    or not np.array_equal(calibration["dataset_indices"][calibration["standard_mask"]], split["standard"])
+                    or np.intersect1d(split["train"], split["enlarged"]).size):
+                raise ValueError(f"Development split mismatch in draw {number}")
+            reference = {key: reference[key] for key in reference.files}
+            calibration = {key: calibration[key] for key in calibration.files}
+        for arrays in (reference, calibration):
+            if (not np.array_equal(classes[arrays["targets"]], training_targets[arrays["dataset_indices"]])
+                    or not np.array_equal(arrays["predictions"], arrays["logits"].argmax(1))):
+                raise ValueError(f"Development labels or predictions mismatch in draw {number}")
+
+        namespace = metric_functions()
+        replayed = fit_policies(namespace, reference, calibration, calibration["standard_mask"], device)
+        for track, gate in replayed.items():
+            expected = original[track]
+            recorded_region = expected["sdm_region"]
+            region = gate["region"]
+            if (gate["temperature"] != expected["temperature"] or gate["thresholds"] != expected["thresholds"]
+                    or region["found"] != recorded_region["found"]):
+                raise ValueError(f"Calibration replay mismatch in draw {number}, {track}")
+            if region["found"]:
+                np.testing.assert_allclose(region["thresholds"], recorded_region["thresholds"], rtol=1e-5, atol=1e-7)
+                np.testing.assert_allclose(region["q_prime_min"], recorded_region["q_prime_min"], rtol=1e-5, atol=1e-7)
+                gate["region"] = {**recorded_region, "thresholds": np.asarray(recorded_region["thresholds"], dtype=np.float32)}
+        _, signals = score_policies(namespace, replayed, calibration, np.zeros(len(calibration["targets"]), dtype=bool))
+
+        tracks = {}
+        for track, members in zip(TRACKS, (calibration["standard_mask"], np.ones(len(calibration["targets"]), dtype=bool))):
+            target = int(signals[f"{track}_sdm_identity_admitted"][members].sum())
+            methods = {}
+            for name in ("softmax", "temperature"):
+                confidence = signals[f"{track}_{name}_confidence"][members]
+                threshold = threshold_at_budget(confidence, target)
+                methods[name] = {"threshold": threshold, "primary_calls": int(admission_mask(confidence, threshold).sum())}
+            tracks[track] = {"examples": int(members.sum()), "sdm_primary_calls": target, "methods": methods}
+        budgets[number] = {"artifacts_sha256": hashes, "tracks": tracks}
+    return budgets
+
+
+def evaluate(subsets, campaign, fallback_evidence, data_root, device_name="cpu"):
     from torchvision.datasets import CIFAR100
 
-    test = CIFAR100(data_root, train=False, download=False)
     training = CIFAR100(data_root, train=True, download=False)
+    provenance = json.loads((subsets / "verified-results.json").read_text())
+    plan_digest = verify_file(subsets / "plan.json", provenance["sha256"]["plan.json"])
+    plan = json.loads((subsets / "plan.json").read_text())
+    if plan["mode"] != "benchmark" or len(plan["draws"]) != 5 or plan["draws"] != provenance["draws"]:
+        raise ValueError("Expected five verified benchmark draws")
+    budgets = freeze_calibration_budgets(subsets, provenance, plan, training, device_name)
+    test = CIFAR100(data_root, train=False, download=False)
     test_targets = np.asarray(test.targets)
     expected = json.loads(fallback_evidence.read_text())
     evidence = next(group for group in expected["groups"] if group["dataset"] == "cifar100")
@@ -107,11 +177,6 @@ def evaluate(subsets, campaign, fallback_evidence, data_root):
                 or int((fallback_logits.argmax(1) == test_targets).sum()) != evidence["correct"]):
             raise ValueError("Fallback predictions do not match official CIFAR-100 evidence")
 
-    provenance = json.loads((subsets / "verified-results.json").read_text())
-    plan_digest = verify_file(subsets / "plan.json", provenance["sha256"]["plan.json"])
-    plan = json.loads((subsets / "plan.json").read_text())
-    if plan["mode"] != "benchmark" or len(plan["draws"]) != 5 or plan["draws"] != provenance["draws"]:
-        raise ValueError("Expected five verified benchmark draws")
     rows, per_image, draws = [], {}, []
     for number, draw in enumerate(plan["draws"], 1):
         classes = np.asarray(draw["class_ids"])
@@ -152,6 +217,8 @@ def evaluate(subsets, campaign, fallback_evidence, data_root):
                 for name in ("softmax", "temperature"):
                     scores = first[f"{track}_{name}_confidence"][first_order][keep]
                     masks[track, f"{name}_matched_budget"] = confidence_at_budget(scores, int(sdm.sum()))
+                    frozen = budgets[number]["tracks"][track]["methods"][name]["threshold"]
+                    masks[track, f"{name}_frozen_budget"] = admission_mask(scores, frozen)
         draws.append({"draw": number, "class_ids": classes.tolist(), "official_examples": len(ids),
                       "excluded_exact_pixel_ids": ids[~keep].tolist(), "primary_export_sha256": source_hash})
         image_rows = {"dataset_indices": ids[keep], "fine_labels": test_targets[ids[keep]],
@@ -164,7 +231,12 @@ def evaluate(subsets, campaign, fallback_evidence, data_root):
 
     return {
         "scope": "Retrospective clean CIFAR-100 routing, with known ten-class membership per draw.",
-        "matching": "Softmax uses the nearest whole-score-group primary-call count on each unlabeled test cohort.",
+        "matching": {
+            "matched_budget": "Nearest attainable whole-score-group call count in the unlabeled test cohort.",
+            "frozen_budget": "Nearest attainable count on calibration, with the resulting cutoff applied unchanged on test.",
+        },
+        "calibration_device": device_name,
+        "calibration_budgets": budgets,
         "primary_revision": provenance.get("candidate", provenance.get("training_candidate")),
         "primary_plan_sha256": plan_digest,
         "fallback_checkpoint_sha256": evidence["checkpoint_sha256"],
@@ -181,8 +253,9 @@ def main():
     parser.add_argument("--fallback-evidence", required=True, type=Path, help="Verified clean evidence JSON.")
     parser.add_argument("--data", required=True, type=Path, help="Prepared CIFAR-100 data directory.")
     parser.add_argument("--output", required=True, type=Path, help="New directory for the audit exports.")
+    parser.add_argument("--device", default="cpu", choices=("cpu", "mps", "cuda"), help="Calibration replay device.")
     args = parser.parse_args()
-    report, images = evaluate(args.subsets, args.campaign, args.fallback_evidence, args.data)
+    report, images = evaluate(args.subsets, args.campaign, args.fallback_evidence, args.data, args.device)
     args.output.mkdir(parents=True, exist_ok=False)
     (args.output / "routing.json").write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
     with (args.output / "routing.csv").open("w", newline="") as stream:
