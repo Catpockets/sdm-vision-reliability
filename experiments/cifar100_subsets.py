@@ -33,7 +33,7 @@ def experiment_plan(class_names, smoke):
         class_ids = sorted(class_order(seed, len(class_names))[:10].tolist())
         draws.append({"seed": seed, "class_ids": class_ids, "class_names": [class_names[i] for i in class_ids]})
     return {
-        "protocol_version": 1,
+        "protocol_version": 2,
         "mode": "smoke" if smoke else "benchmark",
         "dataset": "CIFAR-100 fine labels",
         "split_seed": SPLIT_SEED,
@@ -123,7 +123,25 @@ def fit_policies(namespace, reference, calibration, standard_mask, device):
     return tracks
 
 
-def score_policies(namespace, tracks, evaluation):
+def seen_test_pixels(training_and_calibration_images, test_images):
+    """Find exact pixel matches regardless of dataset ID or class label."""
+    seen = {image.tobytes() for image in training_and_calibration_images}
+    return np.array([image.tobytes() in seen for image in test_images], dtype=bool)
+
+
+def summarize_admissions(predictions, labels, admitted, seen_pixels):
+    eligible = ~seen_pixels
+    hits = (predictions == labels) & admitted & eligible
+    statistics = selective_statistics(predictions[eligible], labels[eligible], admitted[eligible])
+    return {
+        "official_examples": len(labels),
+        "excluded_seen_pixels": int(seen_pixels.sum()),
+        "correct_admitted": int(hits.sum()),
+        **{key: value if np.isfinite(value) else None for key, value in statistics.items()},
+    }
+
+
+def score_policies(namespace, tracks, evaluation, seen_pixels):
     from evaluate_matched_shift import streamed_signals
 
     logits, labels = evaluation["logits"], evaluation["targets"]
@@ -139,10 +157,8 @@ def score_policies(namespace, tracks, evaluation):
             probabilities = sdm_probabilities if scale is None else namespace["temperature_probabilities"](logits, scale)
             confidence = probabilities[np.arange(len(predictions)), predictions]
             admitted = sdm_admitted if scale is None else admission_mask(confidence, policy["thresholds"][method])
-            statistics = selective_statistics(predictions, labels, admitted)
             rows.append({"track": track, "method": method,
-                         "correct_admitted": int((admitted & (predictions == labels)).sum()),
-                         **{key: value if np.isfinite(value) else None for key, value in statistics.items()}})
+                         **summarize_admissions(predictions, labels, admitted, seen_pixels)})
             arrays[f"{track}_{method}_confidence"] = confidence
             arrays[f"{track}_{method}_admitted"] = admitted
     return rows, arrays
@@ -240,10 +256,14 @@ def evaluate_draw(training, data_dir, folder, draw, plan, train, torch):
     if len(test_ids) != len(class_ids) * plan["per_class"]["test"]:
         raise ValueError("Incomplete official test population")
     evaluation = predict(test, test_ids)
-    rows, scores = score_policies(namespace, tracks, evaluation)
+    seen_pixels = seen_test_pixels(
+        training.data[np.concatenate((split["train"], split["enlarged"]))], test.data[test_ids]
+    )
+    rows, scores = score_policies(namespace, tracks, evaluation, seen_pixels)
     np.savez_compressed(folder / "test_predictions.npz", dataset_indices=test_ids,
                         fine_labels=test_labels[test_ids], logits=evaluation["logits"],
-                        labels=evaluation["targets"], predictions=evaluation["predictions"], **scores)
+                        labels=evaluation["targets"], predictions=evaluation["predictions"],
+                        seen_train_or_calibration_pixels=seen_pixels, **scores)
     return rows
 
 

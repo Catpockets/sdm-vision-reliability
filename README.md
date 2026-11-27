@@ -47,7 +47,9 @@ python experiments/cifar100_subsets.py --draw 1 --data-dir /path/to/cifar100
 Add `--benchmark` for the fixed 40-epoch experiment and repeat for draws 1–5.
 Use `--out` to choose a fresh artifact root. Standard and enlarged calibration
 use 25 and 100 images per class, respectively. Predictions, split indices, frozen
-parameters and run status are saved outside version control. The benchmark reports
+parameters and run status are saved outside version control. Metrics exclude official-test
+images whose pixels exactly match any image in that draw’s training or calibration sets.
+Those predictions and their exclusion flags remain in the export. The results are
 exploratory evidence for the sampled classes. See [issue #35](https://github.com/Catpockets/sdm-vision-reliability/issues/35).
 
 ## Research Question

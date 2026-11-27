@@ -51,6 +51,29 @@ class SubsetProtocolTests(unittest.TestCase):
         self.assertEqual(result["coverage"], 0)
         self.assertTrue(np.isnan(result["accepted_accuracy"]))
 
+    def test_exact_pixel_matches_are_excluded_in_all_method_denominators(self):
+        training = np.array([[11, 22], [33, 44]], dtype=np.uint8)
+        held_out = np.array([[33, 44], [33, 45], [22, 11]], dtype=np.uint8)
+        seen = subsets.seen_test_pixels(training, held_out)
+        np.testing.assert_array_equal(seen, [True, False, False])
+
+        # The excluded item is a correct admission. The remaining admitted item is wrong.
+        result = subsets.summarize_admissions(
+            np.array([0, 1, 0]), np.array([0, 0, 0]), np.array([True, True, False]), seen
+        )
+        self.assertEqual(result["official_examples"], 3)
+        self.assertEqual(result["excluded_seen_pixels"], 1)
+        self.assertEqual(result["examples"], 2)
+        self.assertEqual(result["admitted"], 1)
+        self.assertEqual(result["correct_admitted"], 0)
+        self.assertEqual(result["coverage"], 0.5)
+        self.assertEqual(result["accepted_accuracy"], 0.)
+        only_seen_admitted = subsets.summarize_admissions(
+            np.array([0, 1, 0]), np.array([0, 0, 0]), np.array([True, False, False]), seen
+        )
+        self.assertEqual(only_seen_admitted["admitted"], 0)
+        self.assertIsNone(only_seen_admitted["accepted_accuracy"])
+
     def test_sdm_region_fits_actual_width(self):
         region_for = subsets.metric_functions()["fit_high_reliability_region"]
         region = region_for(np.eye(10), np.full(10, 2.0), np.arange(10))
