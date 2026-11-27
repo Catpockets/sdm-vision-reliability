@@ -52,6 +52,12 @@ images whose pixels exactly match any image in that draw’s training or calibra
 Those predictions and their exclusion flags remain in the export. The results are
 exploratory evidence for the sampled classes. See [issue #35](https://github.com/Catpockets/sdm-vision-reliability/issues/35).
 
+To compare two-stage routing from saved subset predictions and the full-class ConvNeXt campaign,
+see `python scripts/evaluate_subset_cascade.py --help`. The audit reports full-coverage accuracy
+and fallback calls for SDM, confidence routing with calibration-frozen cutoffs and retrospectively
+matched budgets, and each standalone classifier. It binds the inputs to the existing benchmark evidence and screens
+test images against the development population of both classifiers.
+
 ## Research Question
 
 Can SDM-based uncertainty estimation improve the reliability of multi-class vision models under distribution shift and out-of-distribution conditions?
