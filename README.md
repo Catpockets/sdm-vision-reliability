@@ -58,6 +58,11 @@ and fallback calls for SDM, confidence routing with calibration-frozen cutoffs a
 matched budgets, and each standalone classifier. It binds the inputs to the existing benchmark evidence and screens
 test images against the development population of both classifiers.
 
+Use `python scripts/benchmark_subset_cascade.py --help` to reproduce the latency measurement
+from the same checkpoints and routing audit. Timings cover preprocessing, synchronized inference,
+routing and fallback from decoded in-memory images through CPU predictions. Set batch sizes to
+measure the crossover and use `--compare-sdm-cache` to time the cached reference calculations.
+
 ## Research Question
 
 Can SDM-based uncertainty estimation improve the reliability of multi-class vision models under distribution shift and out-of-distribution conditions?
